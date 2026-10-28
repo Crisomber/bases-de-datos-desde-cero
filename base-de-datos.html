@@ -1,0 +1,1581 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<style>:root{color-scheme:light;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0;font:14px system-ui,sans-serif}img{max-width:100%}[hidden]{display:none!important}</style>
+</head>
+<body>
+<title>Bases de datos desde cero</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;1,400&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: índice fijo a la izquierda + capítulos en columna de lectura; laboratorio SQL como cajón lateral */
+:root {
+  --bg: #F3F5F8;
+  --surface: #FFFFFF;
+  --surface-2: #E9EEF4;
+  --ink: #142230;
+  --muted: #566778;
+  --line: #D3DCE6;
+  --accent: #1B5BC7;
+  --accent-ink: #FFFFFF;
+  --accent-soft: #E1EAFA;
+  --key: #A8500C;
+  --ok: #1C7A4B;
+  --ok-soft: #DDF2E6;
+  --bad: #B8322A;
+  --bad-soft: #FBE3E1;
+  --warn-soft: #FCF1D9;
+  --warn: #8A5A00;
+  --code-bg: #142230;
+  --code-fg: #DCE6F0;
+  --code-kw: #F2A65A;
+  --code-str: #8FD6A8;
+  --code-num: #9CC3FF;
+  --code-com: #7D8FA1;
+  --hit: rgba(28, 122, 75, .16);
+  --scan: rgba(27, 91, 199, .14);
+  --f-display: "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+  --f-body: "IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
+  --f-mono: "JetBrains Mono", ui-monospace, "Cascadia Code", Consolas, monospace;
+  --radius: 10px;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0D141B; --surface: #151F29; --surface-2: #1C2834; --ink: #E2E9F0; --muted: #93A3B4; --line: #293746;
+    --accent: #6FA0FF; --accent-ink: #0D141B; --accent-soft: #1A2A44; --key: #F2A65A;
+    --ok: #5CC98F; --ok-soft: #14301F; --bad: #FF7B70; --bad-soft: #3A1A18; --warn-soft: #33290F; --warn: #F0C062;
+    --code-bg: #0A1016; --code-fg: #DCE6F0; --hit: rgba(92, 201, 143, .18); --scan: rgba(111, 160, 255, .18);
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0D141B; --surface: #151F29; --surface-2: #1C2834; --ink: #E2E9F0; --muted: #93A3B4; --line: #293746;
+  --accent: #6FA0FF; --accent-ink: #0D141B; --accent-soft: #1A2A44; --key: #F2A65A;
+  --ok: #5CC98F; --ok-soft: #14301F; --bad: #FF7B70; --bad-soft: #3A1A18; --warn-soft: #33290F; --warn: #F0C062;
+  --code-bg: #0A1016; --code-fg: #DCE6F0; --hit: rgba(92, 201, 143, .18); --scan: rgba(111, 160, 255, .18);
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } * { transition: none !important; animation: none !important; } }
+body {
+  background: var(--bg); color: var(--ink);
+  font-family: var(--f-body); font-size: 16.5px; line-height: 1.65;
+}
+a { color: var(--accent); }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 4px; }
+code { font-family: var(--f-mono); font-size: .88em; background: var(--surface-2); padding: .1em .35em; border-radius: 4px; }
+h1, h2, h3 { font-family: var(--f-display); text-wrap: balance; line-height: 1.15; margin: 0; }
+h2 { font-size: clamp(1.7rem, 3.4vw, 2.3rem); font-weight: 800; letter-spacing: -.01em; }
+h3 { font-size: 1.25rem; font-weight: 700; margin-top: .4rem; }
+p { margin: 0; }
+.wrap { max-width: 1200px; margin: 0 auto; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+
+/* Cabecera */
+.hero { border-bottom: 1px solid var(--line); background: var(--surface); }
+.hero .wrap { padding-block: 48px 36px; display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); gap: 40px; align-items: end; }
+.eyebrow { font-family: var(--f-mono); font-size: .75rem; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); }
+.hero h1 { font-size: clamp(2.4rem, 6vw, 4.2rem); font-weight: 800; letter-spacing: -.025em; margin-top: 10px; }
+.hero h1 span { color: var(--accent); }
+.hero .lead { margin-top: 16px; max-width: 58ch; color: var(--muted); font-size: 1.08rem; }
+.hero-query { font-family: var(--f-mono); font-size: .85rem; background: var(--code-bg); color: var(--code-fg); border-radius: var(--radius); padding: 18px 20px; overflow-x: auto; }
+.hero-query .res { color: var(--code-com); margin-top: 10px; white-space: pre; }
+.progress { margin-top: 22px; display: flex; flex-direction: column; gap: 6px; max-width: 460px; }
+.progress-top { display: flex; justify-content: space-between; gap: 12px; font-size: .9rem; color: var(--muted); }
+.progress-top strong { color: var(--ink); font-variant-numeric: tabular-nums; }
+.bar { height: 8px; background: var(--surface-2); border-radius: 99px; overflow: hidden; }
+.bar > div { height: 100%; width: 0; background: var(--accent); border-radius: 99px; transition: width .4s ease; }
+
+/* Layout */
+.layout { display: grid; grid-template-columns: 230px minmax(0, 1fr); gap: 56px; padding-block: 40px 120px; }
+.toc { position: sticky; top: calc(16px + env(safe-area-inset-top, 0px)); align-self: start; max-height: calc(100vh - 32px); overflow-y: auto; }
+.toc ol { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 2px; }
+.toc a { display: flex; gap: 10px; align-items: baseline; padding: 6px 10px; border-radius: 6px; color: var(--muted); text-decoration: none; font-size: .92rem; line-height: 1.35; }
+.toc a:hover { background: var(--surface-2); color: var(--ink); }
+.toc a.active { background: var(--accent-soft); color: var(--ink); }
+.toc .n { font-family: var(--f-mono); font-size: .72rem; min-width: 1.6em; color: var(--muted); }
+.toc .done-mark { margin-left: auto; color: var(--ok); font-size: .8rem; }
+.toc-title { font-family: var(--f-mono); font-size: .72rem; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); padding: 0 10px 8px; }
+.toc .reset { margin: 18px 10px 0; font-size: .8rem; }
+
+main { min-width: 0; display: flex; flex-direction: column; gap: 72px; }
+section.chap { display: flex; flex-direction: column; gap: 20px; scroll-margin-top: 20px; }
+.chap > p, .chap > ul, .chap > ol { max-width: 68ch; }
+.chap-head { display: flex; flex-direction: column; gap: 8px; border-top: 2px solid var(--ink); padding-top: 14px; }
+.chap-head .eyebrow { color: var(--accent); }
+ul, ol { margin: 0; padding-left: 1.3em; }
+li + li { margin-top: 4px; }
+
+/* Cajas */
+.note { background: var(--accent-soft); border-radius: var(--radius); padding: 14px 18px; max-width: 72ch; }
+.note.warn { background: var(--warn-soft); }
+.note strong:first-child { display: block; font-family: var(--f-display); margin-bottom: 2px; }
+.grid2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; }
+.tile { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 16px 18px; min-width: 0; }
+.tile h3 { font-size: 1.05rem; margin: 0 0 6px; }
+.tile p { color: var(--muted); font-size: .95rem; }
+
+/* Tablas de datos */
+.tbl-wrap { overflow-x: auto; border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface); }
+table { border-collapse: collapse; width: 100%; font-size: .9rem; }
+th, td { text-align: left; padding: 7px 12px; border-bottom: 1px solid var(--line); white-space: nowrap; }
+th { font-family: var(--f-mono); font-size: .75rem; font-weight: 600; color: var(--muted); background: var(--surface-2); }
+tr:last-child td { border-bottom: 0; }
+td.num { text-align: right; font-variant-numeric: tabular-nums; font-family: var(--f-mono); font-size: .85rem; }
+.null { color: var(--muted); font-style: italic; font-family: var(--f-mono); font-size: .8rem; }
+.pk { color: var(--key); }
+.fk { color: var(--accent); }
+.prose-tbl td, .prose-tbl th { white-space: normal; vertical-align: top; }
+.tbl-caption { font-family: var(--f-mono); font-size: .78rem; color: var(--muted); padding: 6px 2px 0; }
+
+/* Código */
+pre.sql { position: relative; margin: 0; font-family: var(--f-mono); font-size: .86rem; line-height: 1.6; background: var(--code-bg); color: var(--code-fg); border-radius: var(--radius); padding: 16px 18px; overflow-x: auto; white-space: pre; }
+pre.sql .k { color: var(--code-kw); font-weight: 600; }
+pre.sql .s { color: var(--code-str); }
+pre.sql .d { color: var(--code-num); }
+pre.sql .c { color: var(--code-com); font-style: italic; }
+.code-block { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.code-actions { display: flex; gap: 8px; justify-content: flex-end; flex-wrap: wrap; align-items: center; }
+.code-tag { font-family: var(--f-mono); font-size: .72rem; color: var(--muted); margin-right: auto; }
+
+/* Botones */
+button { font: inherit; cursor: pointer; }
+.btn { border: 1px solid var(--line); background: var(--surface); color: var(--ink); padding: 6px 12px; border-radius: 7px; font-size: .85rem; font-weight: 500; display: inline-flex; align-items: center; gap: 6px; }
+.btn:hover { border-color: var(--accent); }
+.btn.primary { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+.btn.primary:hover { filter: brightness(1.08); }
+.btn.ghost { background: transparent; }
+.btn:disabled { opacity: .5; cursor: not-allowed; }
+
+/* Fichas de comando */
+.cmds { display: grid; grid-template-columns: minmax(0, 1fr); gap: 18px; }
+.cmd { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 18px; display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+.cmd-head { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.cmd-name { font-family: var(--f-mono); font-weight: 600; font-size: 1.05rem; color: var(--key); }
+.fam { font-family: var(--f-mono); font-size: .68rem; letter-spacing: .08em; padding: 2px 7px; border-radius: 99px; background: var(--surface-2); color: var(--muted); }
+.cmd p { color: var(--ink); max-width: 70ch; }
+.syntax { font-family: var(--f-mono); font-size: .82rem; color: var(--muted); background: var(--surface-2); border-radius: 6px; padding: 8px 12px; overflow-x: auto; white-space: pre; }
+
+/* Demo: cómo trabaja */
+.demo { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 20px; display: flex; flex-direction: column; gap: 16px; }
+.demo-controls { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+.demo-controls label { font-size: .88rem; color: var(--muted); }
+select, input[type="search"], input[type="text"] { font: inherit; font-size: .9rem; padding: 6px 10px; border-radius: 7px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); }
+.pipeline { list-style: none; padding: 0; margin: 0; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 8px; }
+.pipeline li { margin: 0; border: 1px solid var(--line); border-radius: 8px; padding: 10px; font-size: .82rem; color: var(--muted); background: var(--bg); transition: background .2s, border-color .2s, color .2s; min-width: 0; }
+.pipeline li b { display: block; font-family: var(--f-display); font-size: .95rem; color: var(--ink); margin-bottom: 2px; }
+.pipeline li .sn { font-family: var(--f-mono); font-size: .7rem; }
+.pipeline li.on { border-color: var(--accent); background: var(--accent-soft); color: var(--ink); }
+.pipeline li.past { color: var(--ink); }
+.demo-msg { font-size: .95rem; min-height: 3.2em; max-width: 75ch; }
+.demo-stage { display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr); gap: 16px; align-items: start; }
+.demo-stage h4 { margin: 0 0 6px; font-family: var(--f-mono); font-size: .75rem; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .08em; }
+tr.scan td { background: var(--scan); }
+tr.hit td { background: var(--hit); }
+tr.miss td { opacity: .45; }
+
+/* Quiz */
+.quiz { border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface); overflow: hidden; }
+.quiz-head { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 12px 18px; background: var(--surface-2); flex-wrap: wrap; }
+.quiz-head h3 { margin: 0; font-size: 1.05rem; }
+.quiz-score { font-family: var(--f-mono); font-size: .82rem; color: var(--muted); font-variant-numeric: tabular-nums; }
+.q { padding: 16px 18px; border-top: 1px solid var(--line); display: flex; flex-direction: column; gap: 10px; }
+.q:first-of-type { border-top: 0; }
+.q-text { font-weight: 600; }
+.q-text code { font-weight: 400; }
+.opts { display: grid; gap: 6px; }
+.opt { text-align: left; border: 1px solid var(--line); background: var(--bg); color: var(--ink); border-radius: 8px; padding: 8px 12px; font-size: .93rem; display: flex; gap: 10px; align-items: baseline; }
+.opt:hover:not(:disabled) { border-color: var(--accent); }
+.opt .letter { font-family: var(--f-mono); font-size: .75rem; color: var(--muted); }
+.opt:disabled { cursor: default; }
+.opt.right { border-color: var(--ok); background: var(--ok-soft); }
+.opt.wrong { border-color: var(--bad); background: var(--bad-soft); }
+.why { font-size: .92rem; padding: 10px 12px; border-radius: 8px; background: var(--surface-2); }
+.why b.ok { color: var(--ok); }
+.why b.no { color: var(--bad); }
+
+/* Ejercicio */
+.exercise { border: 1px solid var(--line); border-left: 4px solid var(--key); border-radius: var(--radius); background: var(--surface); padding: 16px 18px; display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+.ex-top { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.ex-label { font-family: var(--f-mono); font-size: .72rem; letter-spacing: .1em; text-transform: uppercase; color: var(--key); }
+.ex-state { margin-left: auto; font-size: .8rem; font-family: var(--f-mono); padding: 2px 8px; border-radius: 99px; background: var(--surface-2); color: var(--muted); }
+.ex-state.solved { background: var(--ok-soft); color: var(--ok); }
+.exercise h3 { margin: 0; font-size: 1.05rem; }
+textarea { width: 100%; min-height: 96px; resize: vertical; font-family: var(--f-mono); font-size: .86rem; line-height: 1.55; background: var(--code-bg); color: var(--code-fg); border: 1px solid var(--line); border-radius: 8px; padding: 12px 14px; }
+.ex-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+.ex-out { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.verdict { padding: 8px 12px; border-radius: 8px; font-size: .92rem; }
+.verdict.ok { background: var(--ok-soft); color: var(--ok); }
+.verdict.no { background: var(--bad-soft); color: var(--bad); }
+.verdict.info { background: var(--surface-2); color: var(--ink); }
+.errbox { font-family: var(--f-mono); font-size: .82rem; background: var(--bad-soft); color: var(--bad); padding: 8px 12px; border-radius: 8px; white-space: pre-wrap; overflow-wrap: anywhere; }
+
+/* Errores mal / bien */
+.pair { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 12px; }
+.pair .code-block { position: relative; }
+.badge { font-family: var(--f-mono); font-size: .7rem; letter-spacing: .08em; text-transform: uppercase; padding: 2px 8px; border-radius: 99px; align-self: flex-start; }
+.badge.bad { background: var(--bad-soft); color: var(--bad); }
+.badge.good { background: var(--ok-soft); color: var(--ok); }
+.trap { display: flex; flex-direction: column; gap: 10px; padding: 18px; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); min-width: 0; }
+.trap h3 { margin: 0; }
+
+/* Orden de ejecución */
+.flow { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; list-style: none; padding: 0; margin: 0; }
+.flow li { margin: 0; font-family: var(--f-mono); font-size: .85rem; padding: 6px 10px; border-radius: 7px; background: var(--surface); border: 1px solid var(--line); }
+.flow li .o { color: var(--muted); font-size: .7rem; margin-right: 6px; }
+.flow .arrow { border: 0; background: none; padding: 0; color: var(--muted); }
+
+/* Laboratorio (cajón) */
+.lab-toggle { position: fixed; right: calc(20px + env(safe-area-inset-right, 0px)); bottom: calc(20px + env(safe-area-inset-bottom, 0px)); z-index: 30; background: var(--ink); color: var(--bg); border: 0; padding: 12px 18px; border-radius: 99px; font-weight: 600; font-size: .92rem; box-shadow: 0 6px 24px rgba(0,0,0,.22); display: flex; gap: 8px; align-items: center; }
+.lab-toggle .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--muted); }
+.lab-toggle .dot.ready { background: var(--ok); }
+.lab { position: fixed; top: 0; right: 0; bottom: 0; z-index: 40; width: min(620px, 100vw); background: var(--surface); border-left: 1px solid var(--line); box-shadow: -10px 0 40px rgba(0,0,0,.18); transform: translateX(105%); transition: transform .28s ease; display: flex; flex-direction: column; padding-top: env(safe-area-inset-top, 0px); padding-bottom: env(safe-area-inset-bottom, 0px); padding-right: env(safe-area-inset-right, 0px); }
+.lab.open { transform: none; }
+.lab-head { display: flex; align-items: center; gap: 10px; padding: 14px 18px; border-bottom: 1px solid var(--line); }
+.lab-head h2 { font-size: 1.25rem; }
+.lab-head .btn:last-child { margin-left: auto; }
+.lab-body { flex: 1; overflow-y: auto; padding: 16px 18px 28px; display: flex; flex-direction: column; gap: 12px; min-height: 0; }
+.lab-status { font-size: .85rem; color: var(--muted); }
+.lab textarea { min-height: 150px; }
+.schema { display: flex; flex-wrap: wrap; gap: 8px; }
+.schema details { background: var(--surface-2); border-radius: 8px; padding: 6px 10px; font-size: .82rem; min-width: 0; }
+.schema summary { cursor: pointer; font-family: var(--f-mono); font-weight: 600; }
+.schema ul { list-style: none; padding: 4px 0 2px; font-family: var(--f-mono); font-size: .78rem; color: var(--muted); }
+.schema li + li { margin-top: 0; }
+.lab-hint { font-size: .8rem; color: var(--muted); }
+.result-meta { font-family: var(--f-mono); font-size: .76rem; color: var(--muted); }
+
+/* Chuleta */
+.cheat-tools { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+.cheat-tools input { flex: 1 1 240px; }
+.cheat td:first-child { font-family: var(--f-mono); color: var(--key); font-weight: 600; }
+.cheat td:last-child { font-family: var(--f-mono); font-size: .8rem; }
+
+/* Examen */
+.exam-actions { display: flex; gap: 10px; padding: 14px 18px; border-top: 1px solid var(--line); flex-wrap: wrap; align-items: center; }
+.exam-result { font-weight: 600; }
+
+footer { border-top: 1px solid var(--line); color: var(--muted); font-size: .85rem; }
+footer .wrap { padding-block: 24px 90px; }
+
+@media (max-width: 920px) {
+  .hero .wrap { grid-template-columns: minmax(0, 1fr); gap: 24px; padding-block: 32px 28px; }
+  .layout { grid-template-columns: minmax(0, 1fr); gap: 28px; padding-block: 20px 100px; }
+  .toc { position: static; max-height: none; overflow: visible; }
+  .toc ol { flex-direction: row; overflow-x: auto; gap: 6px; padding-bottom: 6px; }
+  .toc a { white-space: nowrap; border: 1px solid var(--line); background: var(--surface); }
+  .toc .reset { display: none; }
+  .pipeline { grid-template-columns: minmax(0, 1fr); }
+  .demo-stage { grid-template-columns: minmax(0, 1fr); }
+  main { gap: 56px; }
+}
+</style>
+
+<header class="hero">
+  <div class="wrap">
+    <div>
+      <div class="eyebrow">Curso práctico · SQL · 10 capítulos</div>
+      <h1>Bases de datos <span>desde cero</span></h1>
+      <p class="lead">Qué es una base de datos, cómo responde a una consulta, los comandos SQL que más se usan y los errores que todos cometemos al empezar. Cada capítulo termina con preguntas y ejercicios que se ejecutan de verdad en un laboratorio SQL dentro de la página.</p>
+      <div class="progress" aria-live="polite">
+        <div class="progress-top"><span>Tu progreso</span><strong id="prog-text">0 de 0 retos</strong></div>
+        <div class="bar"><div id="prog-bar"></div></div>
+      </div>
+    </div>
+    <div class="hero-query" aria-label="Ejemplo de consulta">
+      <div><span style="color:var(--code-kw)">SELECT</span> nombre, ciudad</div>
+      <div><span style="color:var(--code-kw)">FROM</span> clientes</div>
+      <div><span style="color:var(--code-kw)">WHERE</span> ciudad = <span style="color:var(--code-str)">'Lima'</span>;</div>
+      <div class="res"> nombre        | ciudad
+---------------+--------
+ María Gómez   | Lima
+ Diego Morales | Lima
+(2 filas)</div>
+    </div>
+  </div>
+</header>
+
+<div class="wrap layout">
+  <nav class="toc" aria-label="Capítulos">
+    <div class="toc-title">Capítulos</div>
+    <ol id="toc-list"></ol>
+    <button class="btn ghost reset" id="reset-progress" type="button">Borrar mi progreso</button>
+  </nav>
+
+  <main>
+
+    <!-- CAPÍTULO 1 -->
+    <section class="chap" id="cap1" data-title="Qué es una base de datos">
+      <div class="chap-head"><span class="eyebrow">Capítulo 1</span><h2>¿Qué es una base de datos?</h2></div>
+      <p>Una <strong>base de datos</strong> es un conjunto organizado de información guardada de forma que se pueda consultar, modificar y proteger con facilidad. Tu lista de contactos, el inventario de una tienda, las notas de un colegio o los movimientos de tu cuenta del banco viven en bases de datos.</p>
+      <p>Piensa en un archivador de oficina: cada cajón es una <strong>tabla</strong> (clientes, productos, pedidos), cada ficha es una <strong>fila</strong> y cada dato de la ficha (nombre, teléfono, ciudad) es una <strong>columna</strong>. La diferencia es que aquí no buscas a mano: le pides los datos al sistema con un lenguaje llamado <strong>SQL</strong> y él los encuentra por ti en milisegundos, aunque haya millones de fichas.</p>
+      <p>El programa que administra la base de datos se llama <strong>SGBD</strong> (Sistema Gestor de Bases de Datos, en inglés DBMS). Es el "bibliotecario": recibe tus peticiones, comprueba que tengas permiso, busca los datos, evita que dos personas se pisen al escribir a la vez y garantiza que nada se pierda si se va la luz.</p>
+
+      <div class="grid2">
+        <div class="tile"><h3>Relacionales (SQL)</h3><p>Datos en tablas con columnas fijas, unidas por claves. Ejemplos: PostgreSQL, MySQL, MariaDB, SQLite, SQL Server, Oracle. Son las más usadas y las que aprendemos aquí.</p></div>
+        <div class="tile"><h3>No relacionales (NoSQL)</h3><p>Guardan documentos (MongoDB), pares clave-valor (Redis), columnas anchas (Cassandra) o grafos (Neo4j). Útiles cuando la estructura cambia mucho o la escala es enorme.</p></div>
+        <div class="tile"><h3>¿Y por qué no un Excel?</h3><p>Una hoja de cálculo no impide datos inválidos, no aguanta a cien personas escribiendo a la vez, no tiene permisos finos y se vuelve lenta con millones de filas.</p></div>
+      </div>
+
+      <h3>Así trabaja una base de datos por dentro</h3>
+      <p>Vamos a seguir una consulta real paso a paso. Elige una ciudad y pulsa <strong>Siguiente paso</strong> para ver qué hace el SGBD desde que recibe el SQL hasta que te devuelve el resultado.</p>
+      <div class="demo" id="demo">
+        <div class="demo-controls">
+          <label for="demo-city">Ciudad a buscar</label>
+          <select id="demo-city"></select>
+          <button class="btn primary" id="demo-next" type="button">Siguiente paso</button>
+          <button class="btn" id="demo-reset" type="button">Reiniciar</button>
+        </div>
+        <pre class="sql" id="demo-sql"></pre>
+        <ol class="pipeline" id="demo-pipeline">
+          <li data-step="1"><span class="sn">PASO 1</span><b>La app envía SQL</b>Tu programa manda el texto de la consulta.</li>
+          <li data-step="2"><span class="sn">PASO 2</span><b>Análisis</b>El parser revisa la sintaxis y que la tabla exista.</li>
+          <li data-step="3"><span class="sn">PASO 3</span><b>Optimizador</b>Decide el plan: ¿hay índice o recorre todo?</li>
+          <li data-step="4"><span class="sn">PASO 4</span><b>Ejecución</b>Lee cada fila y evalúa el WHERE.</li>
+          <li data-step="5"><span class="sn">PASO 5</span><b>Resultado</b>Devuelve solo las columnas pedidas.</li>
+        </ol>
+        <p class="demo-msg" id="demo-msg">Pulsa «Siguiente paso» para empezar.</p>
+        <div class="demo-stage">
+          <div><h4>Tabla clientes (en disco)</h4><div class="tbl-wrap" id="demo-table"></div></div>
+          <div><h4>Resultado</h4><div id="demo-result"><p class="lab-hint">Aún no hay resultado.</p></div></div>
+        </div>
+      </div>
+      <div class="quiz" data-quiz="cap1"></div>
+    </section>
+
+    <!-- CAPÍTULO 2 -->
+    <section class="chap" id="cap2" data-title="Conceptos clave">
+      <div class="chap-head"><span class="eyebrow">Capítulo 2</span><h2>Conceptos clave: tablas, filas, claves</h2></div>
+      <p>Toda la página usa la misma base de datos de ejemplo: una pequeña <strong>tienda de tecnología</strong> con tres tablas. Puedes abrirla cuando quieras en el <strong>Laboratorio SQL</strong> (botón abajo a la derecha).</p>
+
+      <div class="grid2">
+        <div class="tile"><h3>Tabla</h3><p>Colección de datos sobre una sola cosa: clientes, productos, pedidos.</p></div>
+        <div class="tile"><h3>Fila (registro)</h3><p>Un elemento concreto: el cliente «Ana Torres».</p></div>
+        <div class="tile"><h3>Columna (campo)</h3><p>Una característica con un tipo de dato fijo: <code>ciudad</code> es texto, <code>precio</code> es número.</p></div>
+        <div class="tile"><h3>Clave primaria (PK)</h3><p>Columna que identifica cada fila de forma única. No se repite y no puede ser NULL. Ej.: <code>clientes.id</code>.</p></div>
+        <div class="tile"><h3>Clave foránea (FK)</h3><p>Columna que apunta a la PK de otra tabla y crea la relación. Ej.: <code>pedidos.cliente_id → clientes.id</code>.</p></div>
+        <div class="tile"><h3>NULL</h3><p>Significa «desconocido» o «sin valor». No es cero ni texto vacío. Se compara con <code>IS NULL</code>, nunca con <code>=</code>.</p></div>
+      </div>
+
+      <h3>La tienda de ejemplo</h3>
+      <div id="sample-tables" class="grid2"></div>
+      <p class="tbl-caption"><span class="pk">■ clave primaria</span> &nbsp; <span class="fk">■ clave foránea</span> — Cada pedido guarda <em>qué</em> cliente compró y <em>qué</em> producto, sin repetir sus datos.</p>
+
+      <h3>Tipos de datos más comunes</h3>
+      <div class="tbl-wrap">
+        <table class="prose-tbl">
+          <thead><tr><th>Tipo</th><th>Para qué</th><th>Ejemplo</th></tr></thead>
+          <tbody>
+            <tr><td><code>INT</code> / <code>INTEGER</code></td><td>Números enteros</td><td>stock = 25</td></tr>
+            <tr><td><code>DECIMAL(10,2)</code></td><td>Dinero y cantidades exactas (10 dígitos, 2 decimales)</td><td>precio = 59.90</td></tr>
+            <tr><td><code>FLOAT</code> / <code>REAL</code></td><td>Decimales aproximados (medidas científicas). Evítalo para dinero.</td><td>temperatura = 21.37</td></tr>
+            <tr><td><code>VARCHAR(n)</code></td><td>Texto de hasta n caracteres</td><td>nombre = 'Ana'</td></tr>
+            <tr><td><code>TEXT</code></td><td>Texto largo sin límite práctico</td><td>descripción de un producto</td></tr>
+            <tr><td><code>DATE</code> / <code>DATETIME</code> / <code>TIMESTAMP</code></td><td>Fechas y horas (formato estándar AAAA-MM-DD)</td><td>'2024-07-01'</td></tr>
+            <tr><td><code>BOOLEAN</code></td><td>Verdadero o falso</td><td>activo = TRUE</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>Restricciones (reglas que protegen los datos)</h3>
+      <ul>
+        <li><code>PRIMARY KEY</code>: identificador único de la fila.</li>
+        <li><code>FOREIGN KEY ... REFERENCES</code>: el valor debe existir en la otra tabla.</li>
+        <li><code>NOT NULL</code>: la columna es obligatoria.</li>
+        <li><code>UNIQUE</code>: no se permiten valores repetidos (por ejemplo, el email).</li>
+        <li><code>DEFAULT</code>: valor que se pone si no indicas otro.</li>
+        <li><code>CHECK</code>: condición que debe cumplirse, como <code>CHECK (stock &gt;= 0)</code>.</li>
+      </ul>
+
+      <h3>Tipos de relación</h3>
+      <div class="grid2">
+        <div class="tile"><h3>Uno a uno (1:1)</h3><p>Una persona tiene un pasaporte. Poco frecuente; a veces se fusiona en una sola tabla.</p></div>
+        <div class="tile"><h3>Uno a muchos (1:N)</h3><p>Un cliente hace muchos pedidos. La FK va en el lado «muchos» (<code>pedidos.cliente_id</code>).</p></div>
+        <div class="tile"><h3>Muchos a muchos (N:M)</h3><p>Alumnos y cursos. Necesita una tabla intermedia, por ejemplo <code>inscripciones(alumno_id, curso_id)</code>.</p></div>
+      </div>
+      <div class="quiz" data-quiz="cap2"></div>
+    </section>
+
+    <!-- CAPÍTULO 3 -->
+    <section class="chap" id="cap3" data-title="Las familias de SQL">
+      <div class="chap-head"><span class="eyebrow">Capítulo 3</span><h2>SQL y sus cinco familias de comandos</h2></div>
+      <p><strong>SQL</strong> (Structured Query Language) es el lenguaje estándar para hablar con bases de datos relacionales. Es declarativo: describes <em>qué</em> quieres, no <em>cómo</em> buscarlo; de eso se encarga el optimizador. Los comandos se agrupan según su función:</p>
+      <div class="tbl-wrap">
+        <table class="prose-tbl">
+          <thead><tr><th>Familia</th><th>Significado</th><th>Para qué sirve</th><th>Comandos</th></tr></thead>
+          <tbody>
+            <tr><td><strong>DDL</strong></td><td>Data Definition Language</td><td>Crear y cambiar la estructura</td><td><code>CREATE</code>, <code>ALTER</code>, <code>DROP</code>, <code>TRUNCATE</code>, <code>RENAME</code></td></tr>
+            <tr><td><strong>DML</strong></td><td>Data Manipulation Language</td><td>Meter, cambiar y borrar datos</td><td><code>INSERT</code>, <code>UPDATE</code>, <code>DELETE</code></td></tr>
+            <tr><td><strong>DQL</strong></td><td>Data Query Language</td><td>Consultar datos</td><td><code>SELECT</code></td></tr>
+            <tr><td><strong>DCL</strong></td><td>Data Control Language</td><td>Permisos de usuarios</td><td><code>GRANT</code>, <code>REVOKE</code></td></tr>
+            <tr><td><strong>TCL</strong></td><td>Transaction Control Language</td><td>Controlar transacciones</td><td><code>BEGIN</code>, <code>COMMIT</code>, <code>ROLLBACK</code>, <code>SAVEPOINT</code></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="note"><strong>Reglas de escritura</strong>Las palabras clave no distinguen mayúsculas (<code>select</code> = <code>SELECT</code>), pero se escriben en mayúsculas por costumbre. Cada sentencia termina en <code>;</code>. El texto va entre comillas simples <code>'así'</code>. Los comentarios empiezan con <code>--</code>.</div>
+      <div class="note warn"><strong>Dialectos</strong>Cada motor añade variaciones al estándar. En esta página se ejecuta <strong>SQLite</strong>; cuando un comando cambia en MySQL, PostgreSQL o SQL Server te lo indico.</div>
+      <div class="quiz" data-quiz="cap3"></div>
+    </section>
+
+    <!-- CAPÍTULO 4 -->
+    <section class="chap" id="cap4" data-title="Comandos esenciales">
+      <div class="chap-head"><span class="eyebrow">Capítulo 4</span><h2>Los comandos más importantes</h2></div>
+      <p>Estos son los comandos que usarás el 90 % del tiempo. Cada ejemplo tiene el botón <strong>Probar</strong>: lo carga en el laboratorio para que lo ejecutes y lo modifiques.</p>
+
+      <h3>Crear y cambiar la estructura (DDL)</h3>
+      <div class="cmds">
+        <article class="cmd">
+          <div class="cmd-head"><span class="cmd-name">CREATE TABLE</span><span class="fam">DDL</span></div>
+          <p>Crea una tabla nueva con sus columnas, tipos y restricciones.</p>
+          <div class="syntax">CREATE TABLE nombre (columna TIPO restricciones, ...);</div>
+          <pre class="sql" data-try>CREATE TABLE empleados (
+  id      INTEGER PRIMARY KEY,
+  nombre  TEXT NOT NULL,
+  puesto  TEXT DEFAULT 'Vendedor',
+  salario DECIMAL(10,2) CHECK (salario > 0),
+  email   TEXT UNIQUE
+);</pre>
+        </article>
+        <article class="cmd">
+          <div class="cmd-head"><span class="cmd-name">ALTER TABLE</span><span class="fam">DDL</span></div>
+          <p>Modifica una tabla existente: añadir, renombrar o quitar columnas.</p>
+          <pre class="sql" data-try>ALTER TABLE clientes ADD COLUMN telefono TEXT;
+ALTER TABLE clientes RENAME COLUMN telefono TO movil;
+SELECT * FROM clientes LIMIT 3;</pre>
+        </article>
+        <article class="cmd">
+          <div class="cmd-head"><span class="cmd-name">DROP TABLE</span><span class="fam">DDL</span></div>
+          <p>Elimina la tabla completa: estructura y datos. No hay papelera. <code>IF EXISTS</code> evita el error si no existe.</p>
+          <pre class="sql" data-try>DROP TABLE IF EXISTS empleados;</pre>
+        </article>
+        <article class="cmd">
+          <div class="cmd-head"><span class="cmd-name">CREATE DATABASE</span><span class="fam">DDL</span></div>
+          <p>Crea una base de datos nueva en el servidor (MySQL, PostgreSQL, SQL Server). En SQLite cada archivo ya es una base de datos, así que no existe.</p>
+          <pre class="sql">CREATE DATABASE tienda;
+USE tienda;          -- MySQL: elegir la base activa
+-- PostgreSQL: \c tienda</pre>
+        </article>
+      </div>
+
+      <h3>Meter, cambiar y borrar datos (DML)</h3>
+      <div class="cmds">
+        <article class="cmd">
+          <div class="cmd-head"><span class="cmd-name">INSERT INTO</span><span class="fam">DML</span></div>
+          <p>Añade filas nuevas. Indica siempre las columnas: así no dependes del orden de la tabla.</p>
+          <pre class="sql" data-try>INSERT INTO clientes (nombre, ciudad, email, fecha_registro)
+VALUES ('Elena Vidal', 'Madrid', 'elena@correo.com', '2024-09-01');
+
+-- Varias filas a la vez
+INSERT INTO productos (nombre, categoria, precio, stock)
+VALUES ('Alfombrilla', 'Accesorios', 12.00, 50),
+       ('Hub USB', 'Accesorios', 19.90, 20);
+
+SELECT * FROM productos ORDER BY id DESC LIMIT 3;</pre>
+        </article>
+        <article class="cmd">
+          <div class="cmd-head"><span class="cmd-name">UPDATE</span><span class="fam">DML</span></div>
+          <p>Cambia valores de filas existentes. El <code>WHERE</code> decide qué filas se tocan; sin él cambian <strong>todas</strong>.</p>
+          <pre class="sql" data-try>UPDATE productos
+SET precio = precio * 0.90, stock = stock + 5
+WHERE categoria = 'Audio';
+
+SELECT nombre, precio, stock FROM productos WHERE categoria = 'Audio';</pre>
+        </article>
+        <article class="cmd">
+          <div class="cmd-head"><span class="cmd-name">DELETE</span><span class="fam">DML</span></div>
+          <p>Borra filas. Igual que <code>UPDATE</code>: sin <code>WHERE</code> borra todo el contenido de la tabla.</p>
+          <pre class="sql" data-try>DELETE FROM pedidos WHERE fecha &lt; '2024-07-05';
+SELECT COUNT(*) AS pedidos_restantes FROM pedidos;</pre>
+        </article>
+      </div>
+
+      <h3>Consultar datos (DQL)</h3>
+      <div class="cmds">
+        <article class="cmd">
+          <div class="cmd-head"><span class="cmd-name">SELECT … FROM</span><span class="fam">DQL</span></div>
+          <p>Lee datos. <code>*</code> significa «todas las columnas». <code>AS</code> pone un alias, y puedes calcular columnas nuevas.</p>
+          <pre class="sql" data-try>SELECT nombre, precio, precio * 1.21 AS precio_con_iva
+FROM productos;</pre>
+        </article>
+        <article class="cmd">
+          <div class="cmd-head"><span class="cmd-name">WHERE</span><span class="fam">FILTRO</span></div>
+          <p>Filtra filas con condiciones. Operadores: <code>=</code>, <code>&lt;&gt;</code> (distinto), <code>&gt;</code>, <code>&lt;</code>, <code>&gt;=</code>, <code>&lt;=</code>, combinados con <code>AND</code>, <code>OR</code>, <code>NOT</code>.</p>
+          <pre class="sql" data-try>SELECT nombre, categoria, precio
+FROM productos
+WHERE categoria = 'Periféricos' AND precio &lt; 50;</pre>
+        </article>
+        <article class="cmd">
+          <div class="cmd-head"><span class="cmd-name">IN · BETWEEN · LIKE · IS NULL</span><span class="fam">FILTRO</span></div>
+          <p><code>IN</code> compara con una lista; <code>BETWEEN</code> con un rango (incluye los extremos); <code>LIKE</code> busca patrones (<code>%</code> = cualquier cantidad de caracteres, <code>_</code> = exactamente uno); <code>IS NULL</code> detecta valores vacíos.</p>
+          <pre class="sql" data-try>SELECT nombre, ciudad FROM clientes WHERE ciudad IN ('Lima', 'Bogotá');
+SELECT nombre, precio FROM productos WHERE precio BETWEEN 20 AND 40;
+SELECT nombre FROM clientes WHERE nombre LIKE '%ez';
+SELECT nombre FROM clientes WHERE email IS NULL;</pre>
+        </article>
+        <article class="cmd">
+          <div class="cmd-head"><span class="cmd-name">ORDER BY · LIMIT · DISTINCT</span><span class="fam">DQL</span></div>
+          <p><code>ORDER BY</code> ordena (<code>ASC</code> ascendente por defecto, <code>DESC</code> descendente). <code>LIMIT</code> corta el número de filas. <code>DISTINCT</code> quita duplicados.</p>
+          <pre class="sql" data-try>SELECT nombre, precio FROM productos ORDER BY precio DESC LIMIT 3;
+SELECT DISTINCT ciudad FROM clientes ORDER BY ciudad;</pre>
+          <div class="note warn"><strong>Ojo con el dialecto</strong><code>LIMIT 3</code> funciona en MySQL, PostgreSQL y SQLite. En SQL Server es <code>SELECT TOP 3 ...</code> y en Oracle o el estándar SQL es <code>FETCH FIRST 3 ROWS ONLY</code>.</div>
+        </article>
+        <article class="cmd">
+          <div class="cmd-head"><span class="cmd-name">CASE</span><span class="fam">EXPRESIÓN</span></div>
+          <p>Un «si… entonces…» dentro de la consulta.</p>
+          <pre class="sql" data-try>SELECT nombre, stock,
+  CASE
+    WHEN stock = 0 THEN 'Agotado'
+    WHEN stock &lt; 10 THEN 'Pocas unidades'
+    ELSE 'Disponible'
+  END AS estado
+FROM productos;</pre>
+        </article>
+      </div>
+      <div class="quiz" data-quiz="cap4"></div>
+      <h3>Ejercicios prácticos</h3>
+      <div class="exercise" data-ex="e1"></div>
+      <div class="exercise" data-ex="e2"></div>
+      <div class="exercise" data-ex="e3"></div>
+      <div class="exercise" data-ex="e4"></div>
+      <div class="exercise" data-ex="e5"></div>
+      <div class="exercise" data-ex="e6"></div>
+      <div class="exercise" data-ex="e7"></div>
+      <div class="exercise" data-ex="e8"></div>
+    </section>
+
+    <!-- CAPÍTULO 5 -->
+    <section class="chap" id="cap5" data-title="Agrupar y resumir">
+      <div class="chap-head"><span class="eyebrow">Capítulo 5</span><h2>Agrupar y resumir datos</h2></div>
+      <p>Las <strong>funciones de agregado</strong> convierten muchas filas en un solo valor: <code>COUNT</code> (cuenta), <code>SUM</code> (suma), <code>AVG</code> (promedio), <code>MIN</code> y <code>MAX</code>. Con <code>GROUP BY</code> calculas ese resumen por cada grupo, y con <code>HAVING</code> filtras los grupos.</p>
+      <div class="cmds">
+        <article class="cmd">
+          <div class="cmd-head"><span class="cmd-name">COUNT · SUM · AVG · MIN · MAX</span><span class="fam">AGREGADO</span></div>
+          <pre class="sql" data-try>SELECT COUNT(*)      AS productos,
+       SUM(stock)    AS unidades,
+       AVG(precio)   AS precio_medio,
+       MIN(precio)   AS mas_barato,
+       MAX(precio)   AS mas_caro
+FROM productos;</pre>
+        </article>
+        <article class="cmd">
+          <div class="cmd-head"><span class="cmd-name">GROUP BY · HAVING</span><span class="fam">AGREGADO</span></div>
+          <p><code>WHERE</code> filtra filas <em>antes</em> de agrupar; <code>HAVING</code> filtra grupos <em>después</em>.</p>
+          <pre class="sql" data-try>SELECT categoria, COUNT(*) AS cantidad, ROUND(AVG(precio), 2) AS promedio
+FROM productos
+WHERE stock > 0
+GROUP BY categoria
+HAVING COUNT(*) >= 2
+ORDER BY promedio DESC;</pre>
+        </article>
+      </div>
+      <h3>El orden en que el motor lee tu consulta</h3>
+      <p>Escribes <code>SELECT</code> primero, pero el motor la evalúa en este orden. Entenderlo explica muchos errores, como por qué no puedes usar un alias del <code>SELECT</code> dentro del <code>WHERE</code>.</p>
+      <ol class="flow">
+        <li><span class="o">1</span>FROM / JOIN</li><li class="arrow">→</li>
+        <li><span class="o">2</span>WHERE</li><li class="arrow">→</li>
+        <li><span class="o">3</span>GROUP BY</li><li class="arrow">→</li>
+        <li><span class="o">4</span>HAVING</li><li class="arrow">→</li>
+        <li><span class="o">5</span>SELECT</li><li class="arrow">→</li>
+        <li><span class="o">6</span>DISTINCT</li><li class="arrow">→</li>
+        <li><span class="o">7</span>ORDER BY</li><li class="arrow">→</li>
+        <li><span class="o">8</span>LIMIT</li>
+      </ol>
+      <div class="quiz" data-quiz="cap5"></div>
+      <h3>Ejercicios prácticos</h3>
+      <div class="exercise" data-ex="e9"></div>
+      <div class="exercise" data-ex="e10"></div>
+    </section>
+
+    <!-- CAPÍTULO 6 -->
+    <section class="chap" id="cap6" data-title="Unir tablas con JOIN">
+      <div class="chap-head"><span class="eyebrow">Capítulo 6</span><h2>Unir tablas con JOIN</h2></div>
+      <p>Los datos están repartidos en varias tablas para no repetirlos. <code>JOIN</code> los vuelve a juntar usando las claves: «dame cada pedido junto al nombre de su cliente».</p>
+      <div class="tbl-wrap">
+        <table class="prose-tbl">
+          <thead><tr><th>Tipo</th><th>Qué devuelve</th><th>En la tienda</th></tr></thead>
+          <tbody>
+            <tr><td><code>INNER JOIN</code></td><td>Solo las filas que coinciden en ambas tablas</td><td>Clientes que tienen pedidos (7 clientes)</td></tr>
+            <tr><td><code>LEFT JOIN</code></td><td>Todas las filas de la izquierda; si no hay pareja, la derecha sale NULL</td><td>Todos los clientes, Diego aparece con pedido NULL</td></tr>
+            <tr><td><code>RIGHT JOIN</code></td><td>Lo contrario: todas las de la derecha</td><td>Se suele reescribir como LEFT JOIN invirtiendo tablas</td></tr>
+            <tr><td><code>FULL OUTER JOIN</code></td><td>Todas las filas de ambas tablas</td><td>No existe en MySQL (se simula con UNION)</td></tr>
+            <tr><td><code>CROSS JOIN</code></td><td>Todas las combinaciones posibles (producto cartesiano)</td><td>8 clientes × 10 productos = 80 filas</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="cmds">
+        <article class="cmd">
+          <div class="cmd-head"><span class="cmd-name">INNER JOIN</span><span class="fam">DQL</span></div>
+          <p>Los alias cortos (<code>c</code>, <code>p</code>, <code>pr</code>) ahorran escritura y evitan ambigüedad cuando dos tablas tienen una columna con el mismo nombre (<code>id</code>).</p>
+          <pre class="sql" data-try>SELECT p.id, c.nombre AS cliente, pr.nombre AS producto, p.cantidad
+FROM pedidos p
+INNER JOIN clientes  c  ON c.id  = p.cliente_id
+INNER JOIN productos pr ON pr.id = p.producto_id
+ORDER BY p.id;</pre>
+        </article>
+        <article class="cmd">
+          <div class="cmd-head"><span class="cmd-name">LEFT JOIN</span><span class="fam">DQL</span></div>
+          <pre class="sql" data-try>SELECT c.nombre, COUNT(p.id) AS num_pedidos
+FROM clientes c
+LEFT JOIN pedidos p ON p.cliente_id = c.id
+GROUP BY c.id, c.nombre
+ORDER BY num_pedidos DESC;</pre>
+        </article>
+        <article class="cmd">
+          <div class="cmd-head"><span class="cmd-name">UNION · UNION ALL</span><span class="fam">CONJUNTOS</span></div>
+          <p>Apila resultados de dos consultas con las mismas columnas. <code>UNION</code> quita duplicados; <code>UNION ALL</code> los deja (y es más rápido).</p>
+          <pre class="sql" data-try>SELECT ciudad FROM clientes WHERE ciudad LIKE 'B%'
+UNION
+SELECT ciudad FROM clientes WHERE ciudad LIKE 'M%';</pre>
+        </article>
+      </div>
+      <div class="quiz" data-quiz="cap6"></div>
+      <h3>Ejercicios prácticos</h3>
+      <div class="exercise" data-ex="e11"></div>
+      <div class="exercise" data-ex="e12"></div>
+      <div class="exercise" data-ex="e13"></div>
+    </section>
+
+    <!-- CAPÍTULO 7 -->
+    <section class="chap" id="cap7" data-title="Subconsultas, vistas, índices">
+      <div class="chap-head"><span class="eyebrow">Capítulo 7</span><h2>Subconsultas, vistas e índices</h2></div>
+      <div class="cmds">
+        <article class="cmd">
+          <div class="cmd-head"><span class="cmd-name">Subconsulta</span><span class="fam">DQL</span></div>
+          <p>Una consulta dentro de otra. Puede ir en el <code>WHERE</code>, en el <code>FROM</code> o en el <code>SELECT</code>. <code>EXISTS</code> comprueba si la subconsulta devuelve alguna fila.</p>
+          <pre class="sql" data-try>-- Productos que nadie ha comprado
+SELECT nombre FROM productos
+WHERE id NOT IN (SELECT producto_id FROM pedidos);
+
+-- Clientes que han comprado algo de Audio
+SELECT nombre FROM clientes c
+WHERE EXISTS (
+  SELECT 1 FROM pedidos p JOIN productos pr ON pr.id = p.producto_id
+  WHERE p.cliente_id = c.id AND pr.categoria = 'Audio'
+);</pre>
+        </article>
+        <article class="cmd">
+          <div class="cmd-head"><span class="cmd-name">WITH (CTE)</span><span class="fam">DQL</span></div>
+          <p>Una «tabla temporal con nombre» solo para esa consulta. Hace legibles las consultas largas.</p>
+          <pre class="sql" data-try>WITH gasto AS (
+  SELECT p.cliente_id, SUM(p.cantidad * pr.precio) AS total
+  FROM pedidos p JOIN productos pr ON pr.id = p.producto_id
+  GROUP BY p.cliente_id
+)
+SELECT c.nombre, ROUND(g.total, 2) AS total
+FROM gasto g JOIN clientes c ON c.id = g.cliente_id
+WHERE g.total > 300;</pre>
+        </article>
+        <article class="cmd">
+          <div class="cmd-head"><span class="cmd-name">CREATE VIEW</span><span class="fam">DDL</span></div>
+          <p>Guarda una consulta con nombre y úsala como si fuera una tabla. No copia los datos: se recalcula cada vez.</p>
+          <pre class="sql" data-try>CREATE VIEW IF NOT EXISTS sin_stock AS
+SELECT id, nombre, categoria FROM productos WHERE stock = 0;
+
+SELECT * FROM sin_stock;</pre>
+        </article>
+        <article class="cmd">
+          <div class="cmd-head"><span class="cmd-name">CREATE INDEX</span><span class="fam">DDL</span></div>
+          <p>Un índice es como el índice de un libro: el motor salta directo a las filas sin leer la tabla entera. Acelera búsquedas y JOIN, pero ocupa espacio y hace un poco más lentos los INSERT y UPDATE. Crea índices en columnas que filtras o unes a menudo.</p>
+          <pre class="sql" data-try>CREATE INDEX IF NOT EXISTS idx_clientes_ciudad ON clientes(ciudad);
+
+-- Pregunta al motor cómo va a ejecutar la consulta
+EXPLAIN QUERY PLAN
+SELECT * FROM clientes WHERE ciudad = 'Lima';</pre>
+          <p class="lab-hint">En MySQL y PostgreSQL el equivalente es <code>EXPLAIN SELECT ...</code>.</p>
+        </article>
+      </div>
+      <div class="quiz" data-quiz="cap7"></div>
+      <h3>Ejercicio práctico</h3>
+      <div class="exercise" data-ex="e14"></div>
+    </section>
+
+    <!-- CAPÍTULO 8 -->
+    <section class="chap" id="cap8" data-title="Transacciones y permisos">
+      <div class="chap-head"><span class="eyebrow">Capítulo 8</span><h2>Transacciones, ACID y permisos</h2></div>
+      <p>Una <strong>transacción</strong> agrupa varias operaciones que deben ocurrir todas o ninguna. El ejemplo clásico es una transferencia: restar dinero de una cuenta y sumarlo en otra. Si la segunda falla, la primera debe deshacerse.</p>
+      <div class="grid2">
+        <div class="tile"><h3>A · Atomicidad</h3><p>Todo o nada. Si algo falla, se deshace completa.</p></div>
+        <div class="tile"><h3>C · Consistencia</h3><p>La base pasa de un estado válido a otro válido, respetando todas las reglas.</p></div>
+        <div class="tile"><h3>I · Aislamiento</h3><p>Transacciones simultáneas no ven los cambios a medias de las otras.</p></div>
+        <div class="tile"><h3>D · Durabilidad</h3><p>Tras el COMMIT, los cambios sobreviven a un apagón o un fallo.</p></div>
+      </div>
+      <div class="cmds">
+        <article class="cmd">
+          <div class="cmd-head"><span class="cmd-name">BEGIN · COMMIT · ROLLBACK</span><span class="fam">TCL</span></div>
+          <pre class="sql" data-try>BEGIN TRANSACTION;
+UPDATE productos SET stock = stock - 2 WHERE id = 5;
+INSERT INTO pedidos (cliente_id, producto_id, cantidad, fecha)
+VALUES (8, 5, 2, '2024-09-10');
+COMMIT;      -- confirma los dos cambios juntos
+
+BEGIN TRANSACTION;
+DELETE FROM pedidos;   -- ¡uy!
+ROLLBACK;    -- deshace el borrado
+
+SELECT COUNT(*) AS pedidos FROM pedidos;</pre>
+        </article>
+        <article class="cmd">
+          <div class="cmd-head"><span class="cmd-name">SAVEPOINT</span><span class="fam">TCL</span></div>
+          <p>Un punto de guardado dentro de la transacción: puedes volver a él sin deshacer todo.</p>
+          <pre class="sql" data-try>BEGIN;
+UPDATE productos SET precio = 50 WHERE id = 1;
+SAVEPOINT antes_de_borrar;
+DELETE FROM productos WHERE id = 6;
+ROLLBACK TO antes_de_borrar;   -- el borrado se deshace, el UPDATE sigue
+COMMIT;
+SELECT id, nombre, precio FROM productos WHERE id IN (1, 6);</pre>
+        </article>
+        <article class="cmd">
+          <div class="cmd-head"><span class="cmd-name">GRANT · REVOKE</span><span class="fam">DCL</span></div>
+          <p>Dan y quitan permisos. SQLite no tiene usuarios, así que esto se usa en MySQL, PostgreSQL, SQL Server u Oracle. Principio básico: cada usuario con el mínimo permiso que necesita.</p>
+          <pre class="sql">-- PostgreSQL / MySQL
+CREATE USER analista WITH PASSWORD 'clave_segura';   -- MySQL: IDENTIFIED BY
+GRANT SELECT ON clientes TO analista;
+GRANT SELECT, INSERT, UPDATE ON pedidos TO analista;
+REVOKE UPDATE ON pedidos FROM analista;</pre>
+          <p class="lab-hint">No se ejecuta en el laboratorio (SQLite no maneja usuarios).</p>
+        </article>
+      </div>
+      <div class="quiz" data-quiz="cap8"></div>
+      <h3>Ejercicio práctico</h3>
+      <div class="exercise" data-ex="e15"></div>
+    </section>
+
+    <!-- CAPÍTULO 9 -->
+    <section class="chap" id="cap9" data-title="Errores y excepciones">
+      <div class="chap-head"><span class="eyebrow">Capítulo 9</span><h2>Errores, excepciones y trampas comunes</h2></div>
+      <p>Aquí está lo que casi nadie explica al principio: los casos en los que un comando no hace lo que esperas, los errores que lanza el motor y cómo capturarlos. Prueba los ejemplos marcados como <span class="badge bad">mal</span> en el laboratorio para ver el error real.</p>
+
+      <div class="trap">
+        <h3>1. UPDATE o DELETE sin WHERE</h3>
+        <p>No da error: simplemente modifica o borra <strong>todas</strong> las filas. Es el accidente más famoso de SQL.</p>
+        <div class="pair">
+          <div class="code-block"><span class="badge bad">mal</span><pre class="sql">UPDATE clientes SET ciudad = 'Lima';</pre></div>
+          <div class="code-block"><span class="badge good">bien</span><pre class="sql">-- primero mira qué vas a cambiar
+SELECT * FROM clientes WHERE id = 4;
+UPDATE clientes SET ciudad = 'Lima' WHERE id = 4;</pre></div>
+        </div>
+        <p class="lab-hint">Truco: escribe el <code>WHERE</code> primero, prueba con <code>SELECT</code>, y trabaja dentro de una transacción para poder hacer <code>ROLLBACK</code>. En MySQL, <code>SET SQL_SAFE_UPDATES = 1;</code> bloquea UPDATE y DELETE sin WHERE por clave.</p>
+      </div>
+
+      <div class="trap">
+        <h3>2. Comparar con NULL usando =</h3>
+        <p><code>NULL = NULL</code> no es verdadero: es <em>desconocido</em>. Por eso <code>WHERE email = NULL</code> devuelve cero filas sin avisar.</p>
+        <div class="pair">
+          <div class="code-block"><span class="badge bad">mal</span><pre class="sql" data-try>SELECT nombre FROM clientes WHERE email = NULL;</pre></div>
+          <div class="code-block"><span class="badge good">bien</span><pre class="sql" data-try>SELECT nombre FROM clientes WHERE email IS NULL;
+-- y para valores por defecto:
+SELECT nombre, COALESCE(email, 'sin email') AS email FROM clientes;</pre></div>
+        </div>
+        <p class="lab-hint">Variante peligrosa: <code>NOT IN (...)</code> con un NULL dentro de la lista devuelve vacío. Usa <code>NOT EXISTS</code> en su lugar.</p>
+      </div>
+
+      <div class="trap">
+        <h3>3. Usar un agregado en el WHERE</h3>
+        <p>El <code>WHERE</code> se evalúa antes de agrupar, así que todavía no existe <code>COUNT(*)</code>.</p>
+        <div class="pair">
+          <div class="code-block"><span class="badge bad">mal</span><pre class="sql" data-try>SELECT ciudad, COUNT(*) FROM clientes
+WHERE COUNT(*) > 1
+GROUP BY ciudad;</pre></div>
+          <div class="code-block"><span class="badge good">bien</span><pre class="sql" data-try>SELECT ciudad, COUNT(*) FROM clientes
+GROUP BY ciudad
+HAVING COUNT(*) > 1;</pre></div>
+        </div>
+      </div>
+
+      <div class="trap">
+        <h3>4. Columnas sin agrupar en el SELECT</h3>
+        <p>Con <code>GROUP BY</code>, cada columna del <code>SELECT</code> debe estar agrupada o dentro de un agregado. PostgreSQL y SQL Server lanzan error («column must appear in the GROUP BY clause»). MySQL con <code>ONLY_FULL_GROUP_BY</code> también. SQLite lo permite y devuelve un valor cualquiera del grupo, que es aún más peligroso porque no avisa.</p>
+        <div class="pair">
+          <div class="code-block"><span class="badge bad">mal</span><pre class="sql" data-try>SELECT categoria, nombre, MAX(precio)
+FROM productos GROUP BY categoria;</pre></div>
+          <div class="code-block"><span class="badge good">bien</span><pre class="sql" data-try>SELECT categoria, MAX(precio) AS precio_max
+FROM productos GROUP BY categoria;</pre></div>
+        </div>
+      </div>
+
+      <div class="trap">
+        <h3>5. DELETE, TRUNCATE y DROP no son lo mismo</h3>
+        <div class="tbl-wrap">
+          <table class="prose-tbl">
+            <thead><tr><th>Comando</th><th>Qué borra</th><th>¿WHERE?</th><th>¿Se puede deshacer?</th><th>Velocidad</th></tr></thead>
+            <tbody>
+              <tr><td><code>DELETE</code></td><td>Filas (todas o algunas)</td><td>Sí</td><td>Sí, dentro de una transacción</td><td>Lento en tablas enormes (fila a fila)</td></tr>
+              <tr><td><code>TRUNCATE</code></td><td>Todas las filas; deja la estructura y reinicia los contadores</td><td>No</td><td>En PostgreSQL sí dentro de transacción; en MySQL y Oracle no</td><td>Muy rápido</td></tr>
+              <tr><td><code>DROP</code></td><td>La tabla entera: estructura, datos, índices</td><td>No</td><td>Normalmente no</td><td>Inmediato</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p class="lab-hint">SQLite no tiene TRUNCATE: <code>DELETE FROM tabla;</code> sin WHERE hace lo mismo.</p>
+      </div>
+
+      <div class="trap">
+        <h3>6. Violaciones de restricciones</h3>
+        <p>Cuando un dato rompe una regla, el motor rechaza la sentencia completa y lanza un error. Cada motor tiene su mensaje, pero el estándar define códigos <strong>SQLSTATE</strong> que te sirven para reconocerlos en cualquier lenguaje de programación.</p>
+        <div class="tbl-wrap">
+          <table class="prose-tbl">
+            <thead><tr><th>Error</th><th>SQLSTATE</th><th>Mensaje típico</th><th>Pruébalo</th></tr></thead>
+            <tbody>
+              <tr><td>Clave duplicada</td><td><code>23505</code></td><td>MySQL: <em>Duplicate entry '1' for key 'PRIMARY'</em> (1062) · SQLite: <em>UNIQUE constraint failed</em></td><td><button class="btn" type="button" data-try-sql="INSERT INTO clientes (id, nombre) VALUES (1, 'Repetido');">Probar</button></td></tr>
+              <tr><td>Clave foránea inexistente</td><td><code>23503</code></td><td>MySQL: <em>Cannot add or update a child row</em> (1452) · SQLite: <em>FOREIGN KEY constraint failed</em></td><td><button class="btn" type="button" data-try-sql="INSERT INTO pedidos (cliente_id, producto_id, cantidad, fecha) VALUES (99, 1, 1, '2024-09-01');">Probar</button></td></tr>
+              <tr><td>Campo obligatorio vacío</td><td><code>23502</code></td><td>PostgreSQL: <em>null value in column violates not-null constraint</em> · SQLite: <em>NOT NULL constraint failed</em></td><td><button class="btn" type="button" data-try-sql="INSERT INTO clientes (ciudad) VALUES ('Quito');">Probar</button></td></tr>
+              <tr><td>Condición CHECK</td><td><code>23514</code></td><td>SQLite: <em>CHECK constraint failed</em></td><td><button class="btn" type="button" data-try-sql="UPDATE productos SET stock = -5 WHERE id = 1;">Probar</button></td></tr>
+              <tr><td>Error de sintaxis</td><td><code>42601</code></td><td><em>syntax error at or near ...</em></td><td><button class="btn" type="button" data-try-sql="SELEC nombre FROM clientes;">Probar</button></td></tr>
+              <tr><td>Tabla o columna no existe</td><td><code>42P01</code> / <code>42703</code></td><td><em>no such table</em> · <em>no such column</em></td><td><button class="btn" type="button" data-try-sql="SELECT apellido FROM clientes;">Probar</button></td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p class="lab-hint">También existe la eliminación en cascada: <code>FOREIGN KEY (cliente_id) REFERENCES clientes(id) ON DELETE CASCADE</code> borra los pedidos al borrar el cliente. Sin ella, borrar un cliente con pedidos da error 23503.</p>
+      </div>
+
+      <div class="trap">
+        <h3>7. Capturar excepciones en el propio motor</h3>
+        <p>En procedimientos almacenados puedes atrapar el error, deshacer la transacción y reaccionar. La sintaxis cambia según el motor (no se ejecutan en el laboratorio):</p>
+        <div class="pair">
+          <div class="code-block"><span class="code-tag">SQL Server · TRY…CATCH</span><pre class="sql">BEGIN TRY
+  BEGIN TRANSACTION;
+  UPDATE cuentas SET saldo = saldo - 100 WHERE id = 1;
+  UPDATE cuentas SET saldo = saldo + 100 WHERE id = 2;
+  COMMIT;
+END TRY
+BEGIN CATCH
+  ROLLBACK;
+  SELECT ERROR_NUMBER(), ERROR_MESSAGE();
+END CATCH;</pre></div>
+          <div class="code-block"><span class="code-tag">PostgreSQL · PL/pgSQL EXCEPTION</span><pre class="sql">DO $$
+BEGIN
+  INSERT INTO clientes (id, nombre) VALUES (1, 'Repetido');
+EXCEPTION
+  WHEN unique_violation THEN
+    RAISE NOTICE 'Ese id ya existe';
+END $$;</pre></div>
+          <div class="code-block"><span class="code-tag">MySQL · DECLARE HANDLER</span><pre class="sql">CREATE PROCEDURE alta_cliente(IN p_nombre VARCHAR(80))
+BEGIN
+  DECLARE EXIT HANDLER FOR SQLEXCEPTION
+  BEGIN
+    ROLLBACK;
+    SELECT 'Falló el alta' AS mensaje;
+  END;
+  START TRANSACTION;
+  INSERT INTO clientes (nombre) VALUES (p_nombre);
+  COMMIT;
+END;</pre></div>
+          <div class="code-block"><span class="code-tag">SQLite · conflicto controlado</span><pre class="sql" data-try>-- no falla: ignora la fila repetida
+INSERT OR IGNORE INTO clientes (id, nombre) VALUES (1, 'Repetido');
+-- "upsert": si existe, actualiza
+INSERT INTO clientes (id, nombre, ciudad) VALUES (8, 'Diego Morales', 'Cusco')
+ON CONFLICT(id) DO UPDATE SET ciudad = excluded.ciudad;
+SELECT * FROM clientes WHERE id IN (1, 8);</pre></div>
+        </div>
+        <p class="lab-hint">MySQL usa <code>INSERT IGNORE</code> y <code>ON DUPLICATE KEY UPDATE</code>; PostgreSQL usa <code>ON CONFLICT</code> igual que SQLite.</p>
+      </div>
+
+      <div class="trap">
+        <h3>8. Otras sorpresas</h3>
+        <ul>
+          <li><strong>División entera:</strong> en PostgreSQL, SQL Server y SQLite, <code>5 / 2</code> da <code>2</code>. Escribe <code>5.0 / 2</code> o <code>CAST(5 AS DECIMAL) / 2</code>. (MySQL sí devuelve 2.5.)</li>
+          <li><strong>Comillas:</strong> simples para texto (<code>'Lima'</code>). Las dobles son para nombres de columnas en PostgreSQL y el estándar; en MySQL se usan acentos graves <code>`tabla`</code>.</li>
+          <li><strong>Mayúsculas en los datos:</strong> <code>'lima' = 'Lima'</code> es falso en PostgreSQL y SQLite, pero verdadero en MySQL por su collation habitual.</li>
+          <li><strong>Autoincremento:</strong> MySQL <code>AUTO_INCREMENT</code>, PostgreSQL <code>SERIAL</code> o <code>GENERATED ALWAYS AS IDENTITY</code>, SQL Server <code>IDENTITY(1,1)</code>, SQLite <code>INTEGER PRIMARY KEY</code>.</li>
+          <li><strong>Fechas como texto:</strong> guarda siempre en formato <code>AAAA-MM-DD</code>; con <code>DD/MM/AAAA</code> la ordenación alfabética sale mal.</li>
+        </ul>
+      </div>
+
+      <div class="trap">
+        <h3>9. Inyección SQL: el error de seguridad nº 1</h3>
+        <p>Si construyes la consulta pegando texto que escribe el usuario, alguien puede escribir SQL en lugar de un nombre. Usa siempre <strong>consultas parametrizadas</strong>: el motor trata el dato como dato, nunca como código.</p>
+        <div class="pair">
+          <div class="code-block"><span class="badge bad">mal (Python)</span><pre class="sql">sql = "SELECT * FROM clientes WHERE nombre = '" + nombre + "'"
+# nombre = "x' OR '1'='1"  → devuelve TODOS los clientes</pre></div>
+          <div class="code-block"><span class="badge good">bien (Python)</span><pre class="sql">cursor.execute(
+  "SELECT * FROM clientes WHERE nombre = ?",
+  (nombre,)
+)</pre></div>
+        </div>
+      </div>
+      <div class="quiz" data-quiz="cap9"></div>
+    </section>
+
+    <!-- CAPÍTULO 10 -->
+    <section class="chap" id="cap10" data-title="Diseño y normalización">
+      <div class="chap-head"><span class="eyebrow">Capítulo 10</span><h2>Diseñar bien: normalización</h2></div>
+      <p>Normalizar es repartir los datos en tablas para que cada dato viva en <strong>un solo lugar</strong>. Así evitas inconsistencias: si el email de Ana está copiado en 30 pedidos y lo cambias en 29, ya tienes un problema.</p>
+      <p>Partimos de una tabla mal diseñada:</p>
+      <div class="tbl-wrap">
+        <table>
+          <thead><tr><th>pedido</th><th>cliente</th><th>ciudad_cliente</th><th>productos</th></tr></thead>
+          <tbody>
+            <tr><td class="num">1</td><td>Ana Torres</td><td>Madrid</td><td>Teclado, Auriculares</td></tr>
+            <tr><td class="num">2</td><td>Ana Torres</td><td>Madrid</td><td>Portátil</td></tr>
+            <tr><td class="num">3</td><td>Luis Pérez</td><td>Bogotá</td><td>Portátil, Cable USB-C</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="grid2">
+        <div class="tile"><h3>1FN · Primera forma normal</h3><p>Cada celda guarda un solo valor (nada de «Teclado, Auriculares») y no hay grupos repetidos. Solución: una fila por producto del pedido.</p></div>
+        <div class="tile"><h3>2FN · Segunda forma normal</h3><p>Cumple 1FN y cada columna depende de la clave <em>completa</em>, no de una parte. Si la clave es (pedido, producto), el nombre del cliente depende solo del pedido: sácalo a otra tabla.</p></div>
+        <div class="tile"><h3>3FN · Tercera forma normal</h3><p>Cumple 2FN y ninguna columna depende de otra columna que no sea clave. <code>ciudad_cliente</code> depende del cliente, no del pedido: va en la tabla clientes.</p></div>
+      </div>
+      <p>El resultado es justo la tienda que usas en el laboratorio: <code>clientes</code>, <code>productos</code> y <code>pedidos</code> unidos por claves. A veces, en sistemas de informes, se <strong>desnormaliza</strong> a propósito para leer más rápido, pero siempre sabiendo por qué.</p>
+      <div class="note"><strong>Pasos para diseñar una base de datos</strong>1) Lista las cosas del mundo real (entidades): clientes, productos, pedidos. 2) Lista sus atributos. 3) Elige la clave primaria de cada una. 4) Define las relaciones (1:N, N:M) y pon las claves foráneas. 5) Revisa 1FN, 2FN y 3FN. 6) Añade restricciones e índices.</div>
+      <div class="quiz" data-quiz="cap10"></div>
+    </section>
+
+    <!-- RETOS AVANZADOS -->
+    <section class="chap" id="retos" data-title="Retos avanzados">
+      <div class="chap-head"><span class="eyebrow">Práctica</span><h2>Retos avanzados</h2></div>
+      <p>Nueve ejercicios más difíciles que mezclan todo lo anterior: varios JOIN en la misma consulta, agrupaciones con condiciones, subconsultas correlacionadas y CTE con <code>WITH</code>. Casi todos tienen más de una solución válida: lo que se comprueba es el resultado, no cómo lo escribes.</p>
+      <div class="note"><strong>Método para consultas difíciles</strong>1) Pregúntate qué tablas necesitas y cómo se unen. 2) Escribe primero el <code>FROM</code> con los <code>JOIN</code> y mira las filas con <code>SELECT *</code>. 3) Añade el <code>WHERE</code>. 4) Agrupa y resume. 5) Ordena al final. Prueba cada paso en el laboratorio antes de pasar al siguiente.</div>
+      <div class="exercise" data-ex="e16"></div>
+      <div class="exercise" data-ex="e17"></div>
+      <div class="exercise" data-ex="e18"></div>
+      <div class="exercise" data-ex="e19"></div>
+      <div class="exercise" data-ex="e20"></div>
+      <div class="exercise" data-ex="e21"></div>
+      <div class="exercise" data-ex="e22"></div>
+      <div class="exercise" data-ex="e23"></div>
+      <div class="exercise" data-ex="e24"></div>
+    </section>
+
+    <!-- EXAMEN -->
+    <section class="chap" id="examen" data-title="Examen final">
+      <div class="chap-head"><span class="eyebrow">Evaluación</span><h2>Examen final</h2></div>
+      <p>Diez preguntas al azar sacadas de todo el curso. Al terminar verás tu nota. Pulsa «Nuevo examen» para otra tanda distinta.</p>
+      <div class="quiz" id="exam"></div>
+    </section>
+
+    <!-- CHULETA -->
+    <section class="chap" id="chuleta" data-title="Chuleta de comandos">
+      <div class="chap-head"><span class="eyebrow">Referencia</span><h2>Chuleta de comandos</h2></div>
+      <div class="cheat-tools">
+        <label for="cheat-q" class="lab-hint">Buscar</label>
+        <input type="search" id="cheat-q" placeholder="Ej.: borrar, ordenar, JOIN, NULL…">
+      </div>
+      <div class="tbl-wrap">
+        <table class="cheat prose-tbl">
+          <thead><tr><th>Comando</th><th>Qué hace</th><th>Ejemplo</th></tr></thead>
+          <tbody id="cheat-body"></tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+</div>
+
+<footer><div class="wrap">Material de estudio personal. El laboratorio ejecuta SQLite en tu navegador con <a href="https://sql.js.org" target="_blank" rel="noopener">sql.js</a>; nada se envía a ningún servidor. Tu progreso se guarda solo en este navegador.</div></footer>
+
+<button class="lab-toggle" id="lab-toggle" type="button" aria-controls="lab" aria-expanded="false"><span class="dot" id="lab-dot"></span>Laboratorio SQL</button>
+
+<aside class="lab" id="lab" aria-label="Laboratorio SQL" aria-hidden="true">
+  <div class="lab-head">
+    <h2>Laboratorio SQL</h2>
+    <button class="btn" id="lab-close" type="button">Cerrar</button>
+  </div>
+  <div class="lab-body">
+    <p class="lab-status" id="lab-status">Cargando el motor SQLite…</p>
+    <div class="schema" id="lab-schema"></div>
+    <label for="lab-input" class="lab-hint">Escribe SQL (Ctrl + Enter para ejecutar). Puedes poner varias sentencias separadas por <code>;</code></label>
+    <textarea id="lab-input" spellcheck="false">SELECT * FROM clientes;</textarea>
+    <div class="ex-actions">
+      <button class="btn primary" id="lab-run" type="button">Ejecutar</button>
+      <button class="btn" id="lab-reset" type="button">Restaurar datos originales</button>
+    </div>
+    <div class="ex-out" id="lab-out"></div>
+  </div>
+</aside>
+
+<script src="https://cdn.jsdelivr.net/npm/sql.js@1.8.0/dist/sql-asm.js"></script>
+<script>
+(function () {
+"use strict";
+
+/* ---------- Datos de la tienda ---------- */
+const SCHEMA = `
+PRAGMA foreign_keys = ON;
+CREATE TABLE clientes (
+  id INTEGER PRIMARY KEY,
+  nombre TEXT NOT NULL,
+  ciudad TEXT,
+  email TEXT UNIQUE,
+  fecha_registro DATE
+);
+CREATE TABLE productos (
+  id INTEGER PRIMARY KEY,
+  nombre TEXT NOT NULL,
+  categoria TEXT,
+  precio DECIMAL(10,2) NOT NULL,
+  stock INTEGER NOT NULL DEFAULT 0 CHECK (stock >= 0)
+);
+CREATE TABLE pedidos (
+  id INTEGER PRIMARY KEY,
+  cliente_id INTEGER NOT NULL REFERENCES clientes(id),
+  producto_id INTEGER NOT NULL REFERENCES productos(id),
+  cantidad INTEGER NOT NULL CHECK (cantidad > 0),
+  fecha DATE NOT NULL
+);
+INSERT INTO clientes VALUES
+ (1,'Ana Torres','Madrid','ana@correo.com','2024-01-15'),
+ (2,'Luis Pérez','Bogotá','luis@correo.com','2024-02-03'),
+ (3,'María Gómez','Lima','maria@correo.com','2024-02-20'),
+ (4,'Carlos Ruiz','Madrid',NULL,'2024-03-11'),
+ (5,'Sofía Díaz','Ciudad de México','sofia@correo.com','2024-04-01'),
+ (6,'Jorge Castro','Buenos Aires','jorge@correo.com','2024-04-18'),
+ (7,'Lucía Romero','Bogotá','lucia@correo.com','2024-05-09'),
+ (8,'Diego Morales','Lima','diego@correo.com','2024-06-22');
+INSERT INTO productos VALUES
+ (1,'Teclado mecánico','Periféricos',59.90,25),
+ (2,'Ratón inalámbrico','Periféricos',24.50,40),
+ (3,'Monitor 27 pulgadas','Pantallas',229.00,8),
+ (4,'Portátil 14','Computadoras',899.00,5),
+ (5,'Auriculares','Audio',45.00,30),
+ (6,'Altavoz Bluetooth','Audio',35.00,0),
+ (7,'Webcam HD','Periféricos',39.99,12),
+ (8,'Tablet 10','Computadoras',329.00,7),
+ (9,'Cable USB-C','Accesorios',9.90,100),
+ (10,'Soporte para portátil','Accesorios',27.00,15);
+INSERT INTO pedidos VALUES
+ (1,1,1,1,'2024-07-01'),(2,1,5,2,'2024-07-01'),(3,2,4,1,'2024-07-03'),
+ (4,3,2,3,'2024-07-05'),(5,3,9,5,'2024-07-05'),(6,4,3,1,'2024-07-10'),
+ (7,5,8,1,'2024-07-12'),(8,5,5,1,'2024-07-12'),(9,6,1,2,'2024-07-15'),
+ (10,7,7,1,'2024-07-18'),(11,2,9,2,'2024-07-20'),(12,1,4,1,'2024-08-02'),
+ (13,6,10,1,'2024-08-05'),(14,3,1,1,'2024-08-09'),(15,7,2,2,'2024-08-11');
+`;
+
+const SAMPLE = {
+  clientes: { cols: ["id", "nombre", "ciudad", "email", "fecha_registro"], pk: "id", rows: [
+    [1,"Ana Torres","Madrid","ana@correo.com","2024-01-15"],[2,"Luis Pérez","Bogotá","luis@correo.com","2024-02-03"],
+    [3,"María Gómez","Lima","maria@correo.com","2024-02-20"],[4,"Carlos Ruiz","Madrid",null,"2024-03-11"],
+    [5,"Sofía Díaz","Ciudad de México","sofia@correo.com","2024-04-01"],[6,"Jorge Castro","Buenos Aires","jorge@correo.com","2024-04-18"],
+    [7,"Lucía Romero","Bogotá","lucia@correo.com","2024-05-09"],[8,"Diego Morales","Lima","diego@correo.com","2024-06-22"]] },
+  productos: { cols: ["id", "nombre", "categoria", "precio", "stock"], pk: "id", rows: [
+    [1,"Teclado mecánico","Periféricos",59.90,25],[2,"Ratón inalámbrico","Periféricos",24.50,40],[3,"Monitor 27 pulgadas","Pantallas",229.00,8],
+    [4,"Portátil 14","Computadoras",899.00,5],[5,"Auriculares","Audio",45.00,30],[6,"Altavoz Bluetooth","Audio",35.00,0],
+    [7,"Webcam HD","Periféricos",39.99,12],[8,"Tablet 10","Computadoras",329.00,7],[9,"Cable USB-C","Accesorios",9.90,100],
+    [10,"Soporte para portátil","Accesorios",27.00,15]] },
+  pedidos: { cols: ["id", "cliente_id", "producto_id", "cantidad", "fecha"], pk: "id", fk: ["cliente_id", "producto_id"], rows: [
+    [1,1,1,1,"2024-07-01"],[2,1,5,2,"2024-07-01"],[3,2,4,1,"2024-07-03"],[4,3,2,3,"2024-07-05"],[5,3,9,5,"2024-07-05"],
+    [6,4,3,1,"2024-07-10"],[7,5,8,1,"2024-07-12"],[8,5,5,1,"2024-07-12"],[9,6,1,2,"2024-07-15"],[10,7,7,1,"2024-07-18"],
+    [11,2,9,2,"2024-07-20"],[12,1,4,1,"2024-08-02"],[13,6,10,1,"2024-08-05"],[14,3,1,1,"2024-08-09"],[15,7,2,2,"2024-08-11"]] }
+};
+
+/* ---------- Utilidades ---------- */
+const $ = (s, r = document) => r.querySelector(s);
+const $$ = (s, r = document) => Array.from(r.querySelectorAll(s));
+const esc = (s) => String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+
+const KW = new Set(("SELECT FROM WHERE AND OR NOT IN IS NULL LIKE BETWEEN ORDER BY GROUP HAVING LIMIT OFFSET AS DISTINCT INSERT INTO VALUES UPDATE SET DELETE CREATE TABLE DATABASE ALTER ADD DROP COLUMN TRUNCATE PRIMARY KEY FOREIGN REFERENCES UNIQUE DEFAULT CHECK INDEX VIEW ON JOIN INNER LEFT RIGHT FULL OUTER CROSS UNION ALL ASC DESC BEGIN COMMIT ROLLBACK TRANSACTION SAVEPOINT GRANT REVOKE TO CASE WHEN THEN ELSE END EXISTS INTEGER INT TEXT VARCHAR DECIMAL REAL DATE BOOLEAN AUTOINCREMENT AUTO_INCREMENT CONSTRAINT IF RENAME COUNT SUM AVG MIN MAX ROUND COALESCE TOP FETCH FIRST ROWS ONLY WITH CASCADE SERIAL USE USER PASSWORD EXPLAIN QUERY PLAN PRAGMA TRY CATCH EXCEPTION RAISE NOTICE DO DECLARE EXIT HANDLER FOR PROCEDURE START IGNORE CONFLICT IDENTIFIED CAST")
+  .split(" "));
+
+function highlight(src) {
+  return src.replace(/(--[^\n]*|#[^\n]*)|('(?:[^']|'')*'?)|(\b\d+(?:\.\d+)?\b)|([A-Za-z_][A-Za-z0-9_]*)|([&<>"])/g, (m, c, s, n, w, e) => {
+    if (c) return '<span class="c">' + esc(c) + "</span>";
+    if (s) return '<span class="s">' + esc(s) + "</span>";
+    if (n) return '<span class="d">' + n + "</span>";
+    if (w) return KW.has(w.toUpperCase()) ? '<span class="k">' + w + "</span>" : w;
+    return esc(e);
+  });
+}
+
+/* ---------- Progreso ---------- */
+const STORE_KEY = "bd-desde-cero-v1";
+let progress = { quiz: {}, ex: {} };
+try { const raw = localStorage.getItem(STORE_KEY); if (raw) progress = Object.assign({ quiz: {}, ex: {} }, JSON.parse(raw)); } catch (e) {}
+function saveProgress() { try { localStorage.setItem(STORE_KEY, JSON.stringify(progress)); } catch (e) {} updateProgress(); }
+
+/* ---------- Banco de preguntas ---------- */
+const QUIZ = {
+  cap1: [
+    { q: "¿Qué es un SGBD (DBMS)?", o: ["Un lenguaje para hacer páginas web", "El software que guarda, organiza y da acceso a los datos", "Un tipo de hoja de cálculo", "Un archivo con extensión .sql"], a: 1, why: "El SGBD (MySQL, PostgreSQL, SQLite…) es el programa que administra la base: recibe consultas, controla permisos y protege los datos." },
+    { q: "¿Cuál de estos NO es un gestor de bases de datos relacionales?", o: ["PostgreSQL", "MySQL", "MongoDB", "SQLite"], a: 2, why: "MongoDB es NoSQL: guarda documentos tipo JSON en lugar de tablas con columnas fijas." },
+    { q: "En el recorrido de una consulta, ¿qué componente decide si usar un índice o leer la tabla entera?", o: ["El parser", "El optimizador", "La aplicación", "El disco duro"], a: 1, why: "El optimizador evalúa los caminos posibles y elige el plan de ejecución más barato." },
+    { q: "¿Qué ventaja tiene una base de datos frente a una hoja de cálculo?", o: ["Tiene colores", "Impone reglas a los datos y soporta muchos usuarios escribiendo a la vez", "No necesita instalarse", "No usa columnas"], a: 1, why: "Restricciones, transacciones, permisos y concurrencia son lo que distingue a un SGBD." }
+  ],
+  cap2: [
+    { q: "¿Qué garantiza una clave primaria?", o: ["Que la columna sea numérica", "Que cada fila se identifique de forma única y nunca sea NULL", "Que la tabla salga ordenada", "Que la columna esté cifrada"], a: 1, why: "La PK es única y obligatoria. Puede ser texto, número o una combinación de columnas." },
+    { q: "pedidos.cliente_id apunta a clientes.id. ¿Qué es cliente_id?", o: ["Clave primaria", "Clave foránea", "Un índice único", "Una vista"], a: 1, why: "Una clave foránea guarda la PK de otra tabla y crea la relación entre ambas." },
+    { q: "Un alumno se inscribe en muchos cursos y un curso tiene muchos alumnos. ¿Qué relación es?", o: ["1:1", "1:N", "N:M", "Ninguna"], a: 2, why: "Muchos a muchos. Se resuelve con una tabla intermedia, por ejemplo inscripciones(alumno_id, curso_id)." },
+    { q: "¿Qué tipo usarías para guardar un precio como 19.99 sin errores de redondeo?", o: ["FLOAT", "DECIMAL(10,2)", "VARCHAR(10)", "INT"], a: 1, why: "DECIMAL es exacto. FLOAT es aproximado: 0.1 + 0.2 puede dar 0.30000000000000004." }
+  ],
+  cap3: [
+    { q: "CREATE, ALTER y DROP pertenecen a…", o: ["DML", "DDL", "DCL", "TCL"], a: 1, why: "DDL define la estructura: tablas, columnas, índices, vistas." },
+    { q: "GRANT y REVOKE pertenecen a…", o: ["DDL", "DML", "DCL", "TCL"], a: 2, why: "DCL (Data Control Language) gestiona los permisos." },
+    { q: "INSERT, UPDATE y DELETE pertenecen a…", o: ["DML", "DQL", "DCL", "TCL"], a: 0, why: "DML manipula los datos que hay dentro de las tablas." },
+    { q: "COMMIT y ROLLBACK pertenecen a…", o: ["DQL", "TCL", "DDL", "DCL"], a: 1, why: "TCL controla las transacciones." }
+  ],
+  cap4: [
+    { q: "¿Qué devuelve WHERE precio BETWEEN 20 AND 40?", o: ["Precios mayores que 20 y menores que 40", "Precios de 20 a 40, ambos incluidos", "Solo precios exactamente 20 o 40", "Un error de sintaxis"], a: 1, why: "BETWEEN incluye los extremos: equivale a precio >= 20 AND precio <= 40." },
+    { q: "¿Qué patrón LIKE encuentra nombres que terminan en «ez»?", o: ["'ez%'", "'%ez'", "'_ez'", "'%ez%'"], a: 1, why: "% significa «cualquier cosa». '%ez' = lo que sea seguido de ez al final." },
+    { q: "¿Qué pasa al ejecutar UPDATE productos SET precio = 0; sin WHERE?", o: ["Da error", "Cambia solo la primera fila", "Pone precio 0 en todas las filas", "No hace nada"], a: 2, why: "Sin WHERE la sentencia afecta a todas las filas, y no pide confirmación." },
+    { q: "ORDER BY precio DESC ordena…", o: ["De menor a mayor", "De mayor a menor", "Alfabéticamente", "Al azar"], a: 1, why: "DESC = descendente. ASC (por defecto) = ascendente." },
+    { q: "¿Para qué sirve DISTINCT?", o: ["Ordenar", "Eliminar filas duplicadas del resultado", "Borrar duplicados de la tabla", "Contar filas"], a: 1, why: "DISTINCT solo afecta al resultado de la consulta; la tabla no cambia." }
+  ],
+  cap5: [
+    { q: "¿En qué orden evalúa el motor una consulta?", o: ["SELECT → FROM → WHERE → GROUP BY", "FROM → WHERE → GROUP BY → HAVING → SELECT → ORDER BY", "WHERE → FROM → SELECT → ORDER BY", "FROM → SELECT → WHERE → HAVING"], a: 1, why: "Por eso un alias del SELECT no existe todavía en el WHERE, pero sí en el ORDER BY." },
+    { q: "Para quedarte solo con los grupos donde COUNT(*) > 2 usas…", o: ["WHERE", "HAVING", "ORDER BY", "LIMIT"], a: 1, why: "HAVING filtra después de agrupar; WHERE filtra filas antes." },
+    { q: "Diferencia entre COUNT(email) y COUNT(*):", o: ["Son siempre iguales", "COUNT(email) no cuenta las filas con email NULL", "COUNT(*) ignora los NULL", "COUNT(email) cuenta emails distintos"], a: 1, why: "Los agregados sobre una columna ignoran los NULL. COUNT(*) cuenta filas." }
+  ],
+  cap6: [
+    { q: "INNER JOIN devuelve…", o: ["Todas las filas de la tabla izquierda", "Solo las filas que tienen pareja en ambas tablas", "Todas las filas de ambas tablas", "El producto cartesiano"], a: 1, why: "Si un cliente no tiene pedidos, el INNER JOIN lo deja fuera." },
+    { q: "Para listar TODOS los clientes, tengan pedidos o no:", o: ["INNER JOIN", "clientes LEFT JOIN pedidos", "CROSS JOIN", "pedidos INNER JOIN clientes"], a: 1, why: "LEFT JOIN conserva todas las filas de la izquierda; donde no hay pedido, pone NULL." },
+    { q: "Un CROSS JOIN entre una tabla de 8 filas y otra de 15 devuelve…", o: ["8 filas", "15 filas", "23 filas", "120 filas"], a: 3, why: "El producto cartesiano combina cada fila con cada fila: 8 × 15 = 120. Pasa también si olvidas el ON." },
+    { q: "¿Cuál es la diferencia entre UNION y UNION ALL?", o: ["Ninguna", "UNION quita duplicados; UNION ALL los mantiene", "UNION ALL quita duplicados", "UNION solo une dos tablas"], a: 1, why: "UNION ALL es más rápido porque no tiene que buscar duplicados." }
+  ],
+  cap7: [
+    { q: "¿Para qué sirve un índice?", o: ["Para ordenar físicamente la tabla", "Para acelerar búsquedas, a costa de espacio y escrituras algo más lentas", "Para cifrar los datos", "Para hacer copias de seguridad"], a: 1, why: "El índice es una estructura extra (normalmente un árbol B) que permite saltar directo a las filas." },
+    { q: "Una vista (VIEW) es…", o: ["Una copia física de la tabla", "Una consulta guardada con nombre que se usa como una tabla", "Un tipo de índice", "Un respaldo automático"], a: 1, why: "La vista no guarda datos propios: ejecuta su consulta cada vez (salvo las vistas materializadas)." },
+    { q: "WHERE precio > (SELECT AVG(precio) FROM productos) es un ejemplo de…", o: ["JOIN", "Subconsulta", "Vista", "Trigger"], a: 1, why: "Es una subconsulta escalar: devuelve un solo valor que se usa en la comparación." }
+  ],
+  cap8: [
+    { q: "¿Qué significa la A de ACID?", o: ["Atomicidad", "Autenticación", "Agregación", "Asincronía"], a: 0, why: "Atomicidad: la transacción se ejecuta completa o no se ejecuta." },
+    { q: "Si algo falla a mitad de una transacción, ¿qué comando deshace todo?", o: ["COMMIT", "ROLLBACK", "DELETE", "TRUNCATE"], a: 1, why: "ROLLBACK vuelve al estado anterior al BEGIN." },
+    { q: "Durabilidad significa que…", o: ["La consulta es rápida", "Tras el COMMIT los cambios sobreviven a un apagón", "Los datos no se pueden borrar", "Hay respaldo diario"], a: 1, why: "El motor escribe un registro (log) en disco antes de confirmar." },
+    { q: "¿Qué hace REVOKE?", o: ["Borra un usuario", "Quita un permiso concedido con GRANT", "Deshace una transacción", "Elimina una tabla"], a: 1, why: "GRANT concede, REVOKE retira." }
+  ],
+  cap9: [
+    { q: "¿Qué devuelve SELECT * FROM clientes WHERE email = NULL;?", o: ["Los clientes sin email", "Ninguna fila", "Un error", "Todos los clientes"], a: 1, why: "Cualquier comparación con NULL da «desconocido», nunca verdadero. Usa IS NULL." },
+    { q: "Quieres vaciar una tabla enorme rápido pero conservar su estructura:", o: ["DROP TABLE", "TRUNCATE TABLE", "ALTER TABLE", "DROP DATABASE"], a: 1, why: "TRUNCATE borra todas las filas de golpe y deja la tabla. DROP elimina también la estructura." },
+    { q: "Insertas un cliente con un id que ya existe. ¿Qué pasa?", o: ["Se sobrescribe el anterior", "Error de violación de clave primaria (SQLSTATE 23505)", "Se crea un duplicado", "Se ignora en silencio"], a: 1, why: "La PK no admite repetidos. Para sobrescribir a propósito existe el «upsert» (ON CONFLICT / ON DUPLICATE KEY UPDATE)." },
+    { q: "La forma correcta de evitar la inyección SQL es…", o: ["Concatenar el texto con cuidado", "Usar consultas parametrizadas", "Escribir el SQL en mayúsculas", "Ocultar el nombre de las tablas"], a: 1, why: "Con parámetros el motor nunca interpreta el dato del usuario como código SQL." },
+    { q: "En SQL Server, ¿cómo pides las 5 primeras filas?", o: ["LIMIT 5", "SELECT TOP 5 …", "FIRST 5", "ROWNUM 5"], a: 1, why: "SQL Server usa TOP. MySQL, PostgreSQL y SQLite usan LIMIT." },
+    { q: "En PostgreSQL, ¿cuánto da SELECT 7 / 2;?", o: ["3.5", "3", "4", "Error"], a: 1, why: "Entre enteros la división es entera. Usa 7.0 / 2 para obtener 3.5." }
+  ],
+  cap10: [
+    { q: "Una columna telefonos con el valor «555-1234, 555-9876» viola…", o: ["1FN", "2FN", "3FN", "ACID"], a: 0, why: "1FN exige valores atómicos: un solo dato por celda." },
+    { q: "La 3FN busca eliminar…", o: ["Valores repetidos dentro de una celda", "Columnas que dependen de otra columna que no es clave", "Las claves primarias", "Los índices"], a: 1, why: "Son las dependencias transitivas, como ciudad_cliente dentro de la tabla de pedidos." },
+    { q: "¿Cuándo encaja mejor una base NoSQL de documentos?", o: ["Datos con estructura muy variable y gran escala horizontal", "Siempre que haya transacciones bancarias", "Cuando no quieres claves", "Nunca"], a: 0, why: "Lo relacional brilla con datos estructurados y transacciones; lo documental con esquemas flexibles." }
+  ]
+};
+const EXTRA = [
+  { q: "¿Qué comando muestra cómo ejecutará el motor una consulta?", o: ["SHOW", "EXPLAIN", "DESCRIBE", "TRACE"], a: 1, why: "EXPLAIN (o EXPLAIN QUERY PLAN en SQLite) muestra el plan del optimizador." },
+  { q: "¿Qué hace COALESCE(email, 'sin email')?", o: ["Une dos columnas", "Devuelve el primer valor que no sea NULL", "Cuenta los emails", "Borra los NULL"], a: 1, why: "Es la forma estándar de dar un valor por defecto a los NULL." },
+  { q: "¿Qué hace ON DELETE CASCADE en una clave foránea?", o: ["Impide borrar", "Al borrar el padre, borra también las filas hijas", "Pone NULL en el padre", "Crea un índice"], a: 1, why: "Si borras un cliente, sus pedidos se borran automáticamente." }
+];
+
+/* ---------- Quizzes por capítulo ---------- */
+function renderQuiz(el, key, questions, opts) {
+  opts = opts || {};
+  const letters = "ABCD";
+  el.innerHTML = '<div class="quiz-head"><h3>' + (opts.title || "Pon a prueba lo aprendido") + '</h3><span class="quiz-score"></span></div>' +
+    questions.map((q, i) =>
+      '<div class="q" data-i="' + i + '"><div class="q-text">' + (i + 1) + ". " + esc(q.q) + '</div><div class="opts">' +
+      q.o.map((o, j) => '<button type="button" class="opt" data-j="' + j + '"><span class="letter">' + letters[j] + "</span><span>" + esc(o) + "</span></button>").join("") +
+      '</div><div class="why" hidden></div></div>').join("") + (opts.footer || "");
+
+  const score = $(".quiz-score", el);
+  const answered = {};
+  function updateScore() {
+    const n = Object.keys(answered).length, ok = Object.values(answered).filter(Boolean).length;
+    score.textContent = n ? ok + " / " + questions.length + " correctas" : questions.length + " preguntas";
+    if (opts.onAnswer) opts.onAnswer(n, ok);
+  }
+  $$(".q", el).forEach((qEl) => {
+    const i = +qEl.dataset.i, q = questions[i];
+    const id = key + ":" + (q.id || i);
+    function show(j) {
+      const btns = $$(".opt", qEl);
+      btns.forEach((b, k) => { b.disabled = true; if (k === q.a) b.classList.add("right"); else if (k === j) b.classList.add("wrong"); });
+      const why = $(".why", qEl);
+      why.hidden = false;
+      why.innerHTML = (j === q.a ? '<b class="ok">¡Correcto!</b> ' : '<b class="no">No es esa.</b> La respuesta es <b>' + letters[q.a] + "</b>. ") + esc(q.why);
+      answered[i] = j === q.a;
+      updateScore();
+    }
+    if (!opts.noStore && id in progress.quiz) show(progress.quiz[id]);
+    $$(".opt", qEl).forEach((b) => b.addEventListener("click", () => {
+      const j = +b.dataset.j;
+      show(j);
+      if (!opts.noStore) { progress.quiz[id] = j; saveProgress(); }
+    }));
+  });
+  updateScore();
+}
+
+/* ---------- Motor SQL ---------- */
+let SQL = null, labDb = null;
+function freshDb() { const d = new SQL.Database(); d.exec(SCHEMA); return d; }
+
+function resultTable(res) {
+  const head = "<tr>" + res.columns.map((c) => "<th>" + esc(c) + "</th>").join("") + "</tr>";
+  const body = res.values.map((r) => "<tr>" + r.map((v) => {
+    if (v === null) return '<td><span class="null">NULL</span></td>';
+    if (typeof v === "number") return '<td class="num">' + (Number.isInteger(v) ? v : Math.round(v * 10000) / 10000) + "</td>";
+    return "<td>" + esc(v) + "</td>";
+  }).join("") + "</tr>").join("");
+  return '<div class="tbl-wrap"><table><thead>' + head + "</thead><tbody>" + body + '</tbody></table></div><div class="result-meta">(' + res.values.length + (res.values.length === 1 ? " fila" : " filas") + ")</div>";
+}
+
+function runInto(db, sql, out) {
+  const t0 = performance.now();
+  try {
+    const results = db.exec(sql);
+    const ms = (performance.now() - t0).toFixed(1);
+    if (!results.length) {
+      out.innerHTML = '<div class="verdict info">Hecho. Filas modificadas por la última sentencia: ' + db.getRowsModified() + ' · ' + ms + " ms</div>";
+    } else {
+      out.innerHTML = results.map(resultTable).join("") + '<div class="result-meta">' + ms + " ms</div>";
+    }
+    return results;
+  } catch (e) {
+    out.innerHTML = '<div class="errbox">Error: ' + esc(e.message) + "</div>" + explainError(e.message);
+    return null;
+  }
+}
+
+function explainError(msg) {
+  const m = msg.toLowerCase();
+  let tip = "";
+  if (m.includes("unique constraint")) tip = "Intentaste repetir un valor en una columna PRIMARY KEY o UNIQUE (SQLSTATE 23505).";
+  else if (m.includes("foreign key")) tip = "El valor de la clave foránea no existe en la tabla a la que apunta, o hay filas hijas que dependen de esta (SQLSTATE 23503).";
+  else if (m.includes("not null")) tip = "Falta un valor en una columna obligatoria (SQLSTATE 23502).";
+  else if (m.includes("check constraint")) tip = "El valor no cumple la condición CHECK de la columna (SQLSTATE 23514).";
+  else if (m.includes("syntax error")) tip = "Revisa la ortografía de las palabras clave, las comas y las comillas cerca de donde indica el mensaje.";
+  else if (m.includes("no such table")) tip = "La tabla no existe. Tablas disponibles: clientes, productos, pedidos.";
+  else if (m.includes("no such column")) tip = "Esa columna no existe en la tabla. Mira el esquema arriba.";
+  else if (m.includes("misuse of aggregate")) tip = "No puedes usar COUNT, SUM, AVG… en el WHERE. Usa HAVING después del GROUP BY.";
+  else if (m.includes("already exists")) tip = "Ya existe un objeto con ese nombre. Usa IF NOT EXISTS o restaura los datos originales.";
+  return tip ? '<div class="verdict info">' + esc(tip) + "</div>" : "";
+}
+
+/* ---------- Laboratorio ---------- */
+const lab = $("#lab"), labToggle = $("#lab-toggle"), labInput = $("#lab-input"), labOut = $("#lab-out");
+function openLab(sql) {
+  lab.classList.add("open"); lab.setAttribute("aria-hidden", "false"); labToggle.setAttribute("aria-expanded", "true");
+  if (sql != null) { labInput.value = sql; if (labDb) { runInto(labDb, sql, labOut); renderSchema(); } }
+  setTimeout(() => labInput.focus({ preventScroll: true }), 50);
+}
+function closeLab() { lab.classList.remove("open"); lab.setAttribute("aria-hidden", "true"); labToggle.setAttribute("aria-expanded", "false"); labToggle.focus(); }
+labToggle.addEventListener("click", () => lab.classList.contains("open") ? closeLab() : openLab());
+$("#lab-close").addEventListener("click", closeLab);
+document.addEventListener("keydown", (e) => { if (e.key === "Escape" && lab.classList.contains("open")) closeLab(); });
+$("#lab-run").addEventListener("click", () => { if (labDb) runInto(labDb, labInput.value, labOut); });
+labInput.addEventListener("keydown", (e) => { if ((e.ctrlKey || e.metaKey) && e.key === "Enter") { e.preventDefault(); $("#lab-run").click(); } });
+$("#lab-reset").addEventListener("click", () => { if (!SQL) return; labDb.close(); labDb = freshDb(); renderSchema(); labOut.innerHTML = '<div class="verdict ok">Datos restaurados: la tienda vuelve a su estado original.</div>'; });
+
+function renderSchema() {
+  if (!labDb) return;
+  const tables = labDb.exec("SELECT name, type FROM sqlite_master WHERE type IN ('table','view') AND name NOT LIKE 'sqlite_%' ORDER BY type, name");
+  if (!tables.length) { $("#lab-schema").innerHTML = ""; return; }
+  $("#lab-schema").innerHTML = tables[0].values.map(([name, type]) => {
+    const cols = labDb.exec("PRAGMA table_info(" + JSON.stringify(name) + ")");
+    const n = labDb.exec("SELECT COUNT(*) FROM " + JSON.stringify(name))[0].values[0][0];
+    const items = cols.length ? cols[0].values.map((c) => "<li>" + esc(c[1]) + " <span>" + esc(c[2] || "") + (c[5] ? " · PK" : "") + "</span></li>").join("") : "";
+    return "<details><summary>" + esc(name) + (type === "view" ? " (vista)" : "") + " · " + n + "</summary><ul>" + items + "</ul></details>";
+  }).join("");
+}
+lab.addEventListener("click", (e) => { if (e.target.id === "lab-run" || e.target.id === "lab-reset") setTimeout(renderSchema, 0); });
+
+/* ---------- Ejemplos de código ---------- */
+$$("pre.sql").forEach((pre) => {
+  if (pre.id === "demo-sql") return;
+  const raw = pre.textContent;
+  pre.innerHTML = highlight(raw);
+  if (pre.hasAttribute("data-try")) {
+    const wrap = document.createElement("div");
+    wrap.className = "code-block";
+    pre.replaceWith(wrap);
+    const parentBlock = wrap.parentElement;
+    if (parentBlock.classList.contains("code-block")) { parentBlock.insertBefore(pre, wrap); wrap.remove(); addTry(parentBlock, raw); }
+    else { wrap.appendChild(pre); addTry(wrap, raw); }
+  }
+});
+function addTry(container, raw) {
+  const bar = document.createElement("div");
+  bar.className = "code-actions";
+  bar.innerHTML = '<button type="button" class="btn">Probar en el laboratorio</button>';
+  bar.firstChild.addEventListener("click", () => openLab(raw));
+  container.appendChild(bar);
+}
+$$("[data-try-sql]").forEach((b) => b.addEventListener("click", () => openLab(b.getAttribute("data-try-sql"))));
+
+/* ---------- Tablas de muestra ---------- */
+$("#sample-tables").innerHTML = Object.entries(SAMPLE).map(([name, t]) => {
+  const head = t.cols.map((c) => '<th class="' + (c === t.pk ? "pk" : (t.fk || []).includes(c) ? "fk" : "") + '">' + c + (c === t.pk ? " ⚷" : (t.fk || []).includes(c) ? " →" : "") + "</th>").join("");
+  const rows = t.rows.slice(0, 5).map((r) => "<tr>" + r.map((v) => v === null ? '<td><span class="null">NULL</span></td>' : typeof v === "number" ? '<td class="num">' + (Number.isInteger(v) ? v : v.toFixed(2)) + "</td>" : "<td>" + esc(v) + "</td>").join("") + "</tr>").join("");
+  return '<div style="min-width:0"><div class="tbl-wrap"><table><thead><tr>' + head + "</tr></thead><tbody>" + rows + '</tbody></table></div><div class="tbl-caption">' + name + " · " + t.rows.length + " filas (se muestran 5)</div></div>";
+}).join("");
+
+/* ---------- Demo: cómo trabaja ---------- */
+(function demo() {
+  const cities = [...new Set(SAMPLE.clientes.rows.map((r) => r[2]))];
+  const sel = $("#demo-city");
+  sel.innerHTML = cities.map((c) => "<option" + (c === "Lima" ? " selected" : "") + ">" + esc(c) + "</option>").join("");
+  const next = $("#demo-next"), msg = $("#demo-msg"), table = $("#demo-table"), result = $("#demo-result"), sqlEl = $("#demo-sql");
+  let step = 0, timer = null;
+  const reduced = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  function sql() { return "SELECT nombre, ciudad\nFROM clientes\nWHERE ciudad = '" + sel.value + "';"; }
+  function drawTable() {
+    const cols = SAMPLE.clientes.cols;
+    table.innerHTML = "<table><thead><tr>" + cols.map((c) => "<th>" + c + "</th>").join("") + "</tr></thead><tbody>" +
+      SAMPLE.clientes.rows.map((r) => "<tr>" + r.map((v) => v === null ? '<td><span class="null">NULL</span></td>' : typeof v === "number" ? '<td class="num">' + v + "</td>" : "<td>" + esc(v) + "</td>").join("") + "</tr>").join("") + "</tbody></table>";
+  }
+  function reset() {
+    clearInterval(timer); step = 0; next.disabled = false; next.textContent = "Siguiente paso";
+    sqlEl.innerHTML = highlight(sql()); drawTable();
+    $$("#demo-pipeline li").forEach((li) => li.classList.remove("on", "past"));
+    msg.textContent = "Pulsa «Siguiente paso» para empezar.";
+    result.innerHTML = '<p class="lab-hint">Aún no hay resultado.</p>';
+  }
+  const texts = {
+    1: () => "Tu aplicación (una web, una app móvil, un programa) envía este texto al servidor de base de datos por la red. Para el SGBD es solo una cadena de caracteres.",
+    2: () => "El parser comprueba que la sintaxis sea válida y que existan la tabla clientes y las columnas nombre y ciudad. Si escribieras SELEC o una columna inexistente, se detendría aquí con un error.",
+    3: () => "El optimizador busca el camino más barato. Como no hay índice sobre ciudad, elige un «full table scan»: leer las 8 filas una por una. Con un índice, saltaría directo a '" + sel.value + "'.",
+    4: () => "El motor recorre la tabla y evalúa ciudad = '" + sel.value + "' en cada fila. Verde: cumple la condición. Gris: se descarta.",
+    5: () => "Se proyectan solo las columnas pedidas (nombre y ciudad) y se devuelve el resultado a la aplicación."
+  };
+  function go() {
+    if (step >= 5) { reset(); return; }
+    step++;
+    $$("#demo-pipeline li").forEach((li) => { const s = +li.dataset.step; li.classList.toggle("on", s === step); li.classList.toggle("past", s < step); });
+    msg.textContent = texts[step]();
+    if (step === 4) {
+      next.disabled = true;
+      const trs = $$("tbody tr", table);
+      let i = 0;
+      const tick = () => {
+        if (i > 0) { const prev = trs[i - 1]; prev.classList.remove("scan"); prev.classList.add(SAMPLE.clientes.rows[i - 1][2] === sel.value ? "hit" : "miss"); }
+        if (i < trs.length) { trs[i].classList.add("scan"); i++; } else { clearInterval(timer); next.disabled = false; }
+      };
+      if (reduced) { for (let k = 0; k <= trs.length; k++) tick(); } else { tick(); timer = setInterval(tick, 420); }
+    }
+    if (step === 5) {
+      const rows = SAMPLE.clientes.rows.filter((r) => r[2] === sel.value).map((r) => [r[1], r[2]]);
+      result.innerHTML = resultTable({ columns: ["nombre", "ciudad"], values: rows });
+      next.textContent = "Volver a empezar";
+    }
+  }
+  next.addEventListener("click", go);
+  $("#demo-reset").addEventListener("click", reset);
+  sel.addEventListener("change", reset);
+  reset();
+})();
+
+/* ---------- Ejercicios ---------- */
+const EX = {
+  e1: { t: "Lista de precios", task: "Muestra el <code>nombre</code> y el <code>precio</code> de todos los productos.", solution: "SELECT nombre, precio FROM productos;", hint: "SELECT columna1, columna2 FROM tabla;" },
+  e2: { t: "Periféricos baratos", task: "Muestra <code>nombre</code> y <code>precio</code> de los productos de la categoría <code>'Periféricos'</code> que cuesten menos de 50.", solution: "SELECT nombre, precio FROM productos WHERE categoria = 'Periféricos' AND precio < 50;", hint: "Combina dos condiciones con AND. El texto va entre comillas simples." },
+  e3: { t: "El podio de los caros", task: "Muestra <code>nombre</code> y <code>precio</code> de los 3 productos más caros, de mayor a menor.", solution: "SELECT nombre, precio FROM productos ORDER BY precio DESC LIMIT 3;", ordered: true, hint: "ORDER BY … DESC y luego LIMIT." },
+  e4: { t: "Clientes sin email", task: "Muestra el <code>nombre</code> de los clientes que no tienen email.", solution: "SELECT nombre FROM clientes WHERE email IS NULL;", hint: "Recuerda: con NULL no se usa =." },
+  e5: { t: "Empiezan por L", task: "Muestra el <code>nombre</code> de los clientes cuyo nombre empieza por la letra L.", solution: "SELECT nombre FROM clientes WHERE nombre LIKE 'L%';", hint: "LIKE con el comodín % al final." },
+  e6: { t: "Nuevo producto", task: "Inserta el producto <code>'Micrófono USB'</code>, categoría <code>'Audio'</code>, precio <code>79.00</code> y stock <code>10</code>. No indiques el id: lo pone el motor.", solution: "INSERT INTO productos (nombre, categoria, precio, stock) VALUES ('Micrófono USB', 'Audio', 79.00, 10);", check: "SELECT nombre, categoria, precio, stock FROM productos WHERE nombre = 'Micrófono USB'", hint: "INSERT INTO tabla (col1, col2, …) VALUES (val1, val2, …);" },
+  e7: { t: "Subida de precios", task: "Sube un 10 % el precio de todos los productos de la categoría <code>'Accesorios'</code>. Los demás no deben cambiar.", solution: "UPDATE productos SET precio = precio * 1.10 WHERE categoria = 'Accesorios';", check: "SELECT id, precio FROM productos ORDER BY id", ordered: true, hint: "UPDATE … SET precio = precio * 1.10 WHERE …" },
+  e8: { t: "Limpieza de pedidos", task: "Borra todos los pedidos del cliente con id <code>4</code>.", solution: "DELETE FROM pedidos WHERE cliente_id = 4;", check: "SELECT id FROM pedidos ORDER BY id", ordered: true, hint: "DELETE FROM tabla WHERE condición;" },
+  e9: { t: "Clientes por ciudad", task: "Muestra cada <code>ciudad</code> y cuántos clientes tiene (dos columnas: ciudad y cantidad).", solution: "SELECT ciudad, COUNT(*) FROM clientes GROUP BY ciudad;", hint: "COUNT(*) con GROUP BY ciudad." },
+  e10: { t: "Categorías premium", task: "Muestra las categorías (<code>categoria</code>) cuyo precio promedio sea mayor que 100, junto a ese promedio (dos columnas).", solution: "SELECT categoria, AVG(precio) FROM productos GROUP BY categoria HAVING AVG(precio) > 100;", hint: "Filtrar grupos → HAVING." },
+  e11: { t: "Pedidos con nombres", task: "Para cada pedido muestra: <code>id</code> del pedido, nombre del cliente y nombre del producto (tres columnas).", solution: "SELECT p.id, c.nombre, pr.nombre FROM pedidos p JOIN clientes c ON c.id = p.cliente_id JOIN productos pr ON pr.id = p.producto_id;", hint: "Dos JOIN: pedidos con clientes y pedidos con productos." },
+  e12: { t: "Clientes sin compras", task: "Muestra el <code>nombre</code> de los clientes que nunca han hecho un pedido.", solution: "SELECT c.nombre FROM clientes c LEFT JOIN pedidos p ON p.cliente_id = c.id WHERE p.id IS NULL;", hint: "LEFT JOIN y luego busca las filas donde el pedido es NULL. También vale NOT EXISTS." },
+  e13: { t: "Ranking de gasto", task: "Muestra el nombre de cada cliente y el total que ha gastado (suma de cantidad × precio), de mayor a menor. Dos columnas: nombre y total. Solo clientes con pedidos.", solution: "SELECT c.nombre, SUM(p.cantidad * pr.precio) AS total FROM pedidos p JOIN clientes c ON c.id = p.cliente_id JOIN productos pr ON pr.id = p.producto_id GROUP BY c.id ORDER BY total DESC;", ordered: true, hint: "JOIN de las tres tablas, SUM(p.cantidad * pr.precio), GROUP BY cliente, ORDER BY total DESC." },
+  e14: { t: "Por encima de la media", task: "Muestra <code>nombre</code> y <code>precio</code> de los productos cuyo precio supera el precio promedio de todos los productos.", solution: "SELECT nombre, precio FROM productos WHERE precio > (SELECT AVG(precio) FROM productos);", hint: "Una subconsulta en el WHERE que calcule AVG(precio)." },
+  e15: { t: "Venta en una transacción", task: "En una sola transacción: resta 1 al <code>stock</code> del producto 1 e inserta un pedido del cliente 8 por 1 unidad del producto 1 con fecha <code>'2024-09-15'</code>. Confirma al final.", solution: "BEGIN; UPDATE productos SET stock = stock - 1 WHERE id = 1; INSERT INTO pedidos (cliente_id, producto_id, cantidad, fecha) VALUES (8, 1, 1, '2024-09-15'); COMMIT;", check: "SELECT stock FROM productos WHERE id = 1 UNION ALL SELECT COUNT(*) FROM pedidos WHERE cliente_id = 8 AND producto_id = 1 AND cantidad = 1 AND fecha = '2024-09-15'", ordered: true, hint: "BEGIN; UPDATE …; INSERT …; COMMIT;" },
+  e16: { t: "Unidades vendidas por categoría", task: "Muestra cada <code>categoria</code> y el total de unidades vendidas (suma de <code>cantidad</code> de sus pedidos). Ordena de mayor a menor; si hay empate, por nombre de categoría. Dos columnas.", solution: "SELECT pr.categoria, SUM(p.cantidad) AS unidades FROM pedidos p JOIN productos pr ON pr.id = p.producto_id GROUP BY pr.categoria ORDER BY unidades DESC, pr.categoria;", ordered: true, hint: "JOIN pedidos con productos, GROUP BY categoria, y ORDER BY con dos criterios separados por coma." },
+  e17: { t: "El mejor cliente", task: "Muestra solo el cliente que más dinero ha gastado: <code>nombre</code> y total gastado (cantidad × precio). Una fila, dos columnas.", solution: "WITH gasto AS (SELECT c.nombre, SUM(p.cantidad * pr.precio) AS total FROM pedidos p JOIN clientes c ON c.id = p.cliente_id JOIN productos pr ON pr.id = p.producto_id GROUP BY c.id) SELECT nombre, total FROM gasto ORDER BY total DESC LIMIT 1;", hint: "Calcula el gasto por cliente (como en el ejercicio 13), ordénalo de mayor a menor y quédate con 1 fila." },
+  e18: { t: "Productos que nadie compró", task: "Muestra el <code>nombre</code> de los productos que no aparecen en ningún pedido. Intenta resolverlo de dos formas: con <code>NOT EXISTS</code> y con <code>LEFT JOIN</code>.", solution: "SELECT pr.nombre FROM productos pr WHERE NOT EXISTS (SELECT 1 FROM pedidos p WHERE p.producto_id = pr.id);", hint: "NOT EXISTS (SELECT 1 FROM pedidos p WHERE p.producto_id = pr.id)." },
+  e19: { t: "Ventas por ciudad", task: "Muestra cada <code>ciudad</code> y el dinero total gastado por sus clientes, de mayor a menor. Solo ciudades con ventas. Dos columnas.", solution: "SELECT c.ciudad, SUM(p.cantidad * pr.precio) AS total FROM pedidos p JOIN clientes c ON c.id = p.cliente_id JOIN productos pr ON pr.id = p.producto_id GROUP BY c.ciudad ORDER BY total DESC;", ordered: true, hint: "Igual que el ranking de gasto, pero agrupando por c.ciudad." },
+  e20: { t: "Compradores variados", task: "Muestra el <code>nombre</code> de los clientes que han comprado productos de más de una categoría, y cuántas categorías distintas compraron. Dos columnas.", solution: "SELECT c.nombre, COUNT(DISTINCT pr.categoria) AS categorias FROM pedidos p JOIN clientes c ON c.id = p.cliente_id JOIN productos pr ON pr.id = p.producto_id GROUP BY c.id HAVING COUNT(DISTINCT pr.categoria) > 1;", hint: "COUNT(DISTINCT columna) cuenta valores distintos. Filtra los grupos con HAVING." },
+  e21: { t: "El más caro de cada categoría", task: "Para cada categoría muestra <code>categoria</code>, <code>nombre</code> y <code>precio</code> del producto más caro. Tres columnas, una fila por categoría.", solution: "SELECT categoria, nombre, precio FROM productos p1 WHERE precio = (SELECT MAX(precio) FROM productos p2 WHERE p2.categoria = p1.categoria);", hint: "Subconsulta correlacionada: compara el precio con el MAX(precio) de su misma categoría (p2.categoria = p1.categoria)." },
+  e22: { t: "Ventas por mes", task: "Muestra cada mes en formato <code>'AAAA-MM'</code>, cuántos pedidos hubo y cuántas unidades se vendieron, ordenado por mes. Tres columnas: mes, pedidos, unidades.", solution: "SELECT substr(fecha, 1, 7) AS mes, COUNT(*) AS pedidos, SUM(cantidad) AS unidades FROM pedidos GROUP BY mes ORDER BY mes;", ordered: true, hint: "substr(fecha, 1, 7) recorta '2024-07-01' a '2024-07'. En MySQL sería DATE_FORMAT(fecha, '%Y-%m'); en PostgreSQL, to_char(fecha, 'YYYY-MM')." },
+  e23: { t: "Por encima del cliente medio", task: "Entre los clientes con pedidos, muestra <code>nombre</code> y total gastado de los que gastaron más que el promedio de gasto por cliente. Dos columnas. Usa una CTE con <code>WITH</code>.", solution: "WITH gasto AS (SELECT c.nombre, SUM(p.cantidad * pr.precio) AS total FROM pedidos p JOIN clientes c ON c.id = p.cliente_id JOIN productos pr ON pr.id = p.producto_id GROUP BY c.id) SELECT nombre, total FROM gasto WHERE total > (SELECT AVG(total) FROM gasto);", hint: "Primero una CTE gasto(nombre, total). Luego compara total con (SELECT AVG(total) FROM gasto)." },
+  e24: { t: "Vista de resumen", task: "Crea una vista llamada <code>resumen_clientes</code> con dos columnas: el <code>nombre</code> de cada cliente y su número de pedidos. Deben salir los 8 clientes, también los que tienen 0 pedidos.", solution: "CREATE VIEW resumen_clientes AS SELECT c.nombre, COUNT(p.id) AS num_pedidos FROM clientes c LEFT JOIN pedidos p ON p.cliente_id = c.id GROUP BY c.id;", check: "SELECT * FROM resumen_clientes ORDER BY 1", ordered: true, hint: "CREATE VIEW nombre AS SELECT … con LEFT JOIN y COUNT(p.id); COUNT(*) contaría 1 para quien no tiene pedidos." }
+};
+
+function norm(v) { return typeof v === "number" ? Math.round(v * 100) / 100 : v; }
+function rowsOf(results) {
+  if (!results || !results.length) return [];
+  return results[results.length - 1].values.map((r) => JSON.stringify(r.map(norm)));
+}
+function sameRows(a, b, ordered) {
+  if (a.length !== b.length) return false;
+  if (!ordered) { a = a.slice().sort(); b = b.slice().sort(); }
+  return a.every((x, i) => x === b[i]);
+}
+
+function renderExercise(el) {
+  const id = el.dataset.ex, ex = EX[id];
+  const num = Object.keys(EX).indexOf(id) + 1;
+  el.innerHTML =
+    '<div class="ex-top"><span class="ex-label">Ejercicio ' + num + '</span><span class="ex-state"></span></div>' +
+    "<h3>" + esc(ex.t) + "</h3><p>" + ex.task + "</p>" +
+    '<label class="lab-hint" for="ex-' + id + '">Tu consulta</label>' +
+    '<textarea id="ex-' + id + '" spellcheck="false" placeholder="Escribe aquí tu SQL…"></textarea>' +
+    '<div class="ex-actions"><button type="button" class="btn primary" data-act="run">Ejecutar y comprobar</button><button type="button" class="btn" data-act="hint">Pista</button><button type="button" class="btn ghost" data-act="sol">Ver solución</button></div>' +
+    '<div class="ex-out"></div>';
+  const state = $(".ex-state", el), out = $(".ex-out", el), ta = $("textarea", el);
+  function setState() {
+    const solved = !!progress.ex[id];
+    state.textContent = solved ? "Resuelto ✓" : "Pendiente";
+    state.classList.toggle("solved", solved);
+  }
+  setState();
+  $('[data-act="run"]', el).addEventListener("click", () => {
+    if (!SQL) { out.innerHTML = '<div class="verdict no">El motor SQL todavía no ha cargado. Espera unos segundos.</div>'; return; }
+    const sql = ta.value.trim();
+    if (!sql) { out.innerHTML = '<div class="verdict info">Escribe una consulta primero.</div>'; return; }
+    const userDb = freshDb(), solDb = freshDb();
+    const res = runInto(userDb, sql, out);
+    if (res === null) { userDb.close(); solDb.close(); return; }
+    let userRows, solRows, sres = [];
+    try {
+      userRows = ex.check ? rowsOf(userDb.exec(ex.check)) : rowsOf(res);
+      sres = solDb.exec(ex.solution);
+      solRows = ex.check ? rowsOf(solDb.exec(ex.check)) : rowsOf(sres);
+    } catch (e) { userRows = null; }
+    const userCols = ex.check ? null : (res.length ? res[res.length - 1].columns.length : 0);
+    const solCols = ex.check ? null : (sres.length ? sres[sres.length - 1].columns.length : 0);
+    userDb.close(); solDb.close();
+    const ok = userRows && sameRows(userRows, solRows, ex.ordered) && (ex.check || userCols === solCols);
+    const v = document.createElement("div");
+    v.className = "verdict " + (ok ? "ok" : "no");
+    if (ok) v.textContent = "¡Bien hecho! El resultado coincide con lo esperado.";
+    else if (!ex.check && userCols !== solCols) v.textContent = "Todavía no. Revisa las columnas: se esperaban " + solCols + " y tu consulta devuelve " + userCols + ".";
+    else if (userRows && solRows && userRows.length !== solRows.length) v.textContent = "Todavía no. Se esperaban " + solRows.length + " filas y obtuviste " + userRows.length + ".";
+    else v.textContent = "Todavía no. El número de filas cuadra, pero los valores" + (ex.ordered ? " o el orden" : "") + " no coinciden.";
+    out.prepend(v);
+    if (ok && !progress.ex[id]) { progress.ex[id] = true; saveProgress(); setState(); }
+  });
+  $('[data-act="hint"]', el).addEventListener("click", () => { out.innerHTML = '<div class="verdict info">Pista: ' + esc(ex.hint) + "</div>"; });
+  $('[data-act="sol"]', el).addEventListener("click", (e) => {
+    out.innerHTML = '<pre class="sql">' + highlight(ex.solution.replace(/; /g, ";\n")) + '</pre><p class="lab-hint">Cópiala, entiéndela y vuelve a escribirla tú: así se aprende.</p>';
+  });
+  ta.addEventListener("keydown", (e) => { if ((e.ctrlKey || e.metaKey) && e.key === "Enter") { e.preventDefault(); $('[data-act="run"]', el).click(); } });
+}
+
+/* ---------- Chuleta ---------- */
+const CHEAT = [
+  ["SELECT", "Leer columnas de una tabla", "SELECT nombre, precio FROM productos;"],
+  ["WHERE", "Filtrar filas", "… WHERE precio > 100"],
+  ["AND / OR / NOT", "Combinar condiciones", "… WHERE a = 1 AND (b = 2 OR c = 3)"],
+  ["IN", "Comparar con una lista", "… WHERE ciudad IN ('Lima','Quito')"],
+  ["BETWEEN", "Rango con extremos incluidos", "… WHERE precio BETWEEN 10 AND 50"],
+  ["LIKE", "Buscar patrones de texto (% y _)", "… WHERE nombre LIKE 'A%'"],
+  ["IS NULL / IS NOT NULL", "Detectar valores vacíos", "… WHERE email IS NULL"],
+  ["ORDER BY", "Ordenar resultado (ASC / DESC)", "… ORDER BY precio DESC"],
+  ["LIMIT / TOP / FETCH", "Limitar número de filas", "… LIMIT 10  ·  SELECT TOP 10 …"],
+  ["DISTINCT", "Quitar duplicados del resultado", "SELECT DISTINCT ciudad FROM clientes;"],
+  ["AS", "Alias de columna o tabla", "SELECT precio * 2 AS doble FROM productos p;"],
+  ["CASE", "Condicional dentro de la consulta", "CASE WHEN stock = 0 THEN 'Agotado' ELSE 'OK' END"],
+  ["COUNT / SUM / AVG / MIN / MAX", "Funciones de agregado", "SELECT AVG(precio) FROM productos;"],
+  ["GROUP BY", "Agrupar filas para resumir", "… GROUP BY categoria"],
+  ["HAVING", "Filtrar grupos (tras GROUP BY)", "… HAVING COUNT(*) > 2"],
+  ["INNER JOIN", "Unir filas con coincidencia en ambas tablas", "… FROM a JOIN b ON b.a_id = a.id"],
+  ["LEFT JOIN", "Todas las filas de la izquierda + coincidencias", "… FROM clientes c LEFT JOIN pedidos p ON …"],
+  ["UNION / UNION ALL", "Apilar resultados (sin / con duplicados)", "SELECT … UNION SELECT …"],
+  ["Subconsulta", "Consulta dentro de otra", "… WHERE precio > (SELECT AVG(precio) FROM productos)"],
+  ["EXISTS", "Comprobar si una subconsulta devuelve filas", "… WHERE EXISTS (SELECT 1 FROM …)"],
+  ["WITH", "Consulta con nombre temporal (CTE)", "WITH t AS (SELECT …) SELECT * FROM t;"],
+  ["INSERT INTO", "Añadir filas", "INSERT INTO t (a, b) VALUES (1, 'x');"],
+  ["UPDATE", "Modificar filas (¡con WHERE!)", "UPDATE t SET a = 2 WHERE id = 1;"],
+  ["DELETE", "Borrar filas (¡con WHERE!)", "DELETE FROM t WHERE id = 1;"],
+  ["UPSERT", "Insertar o actualizar si ya existe", "INSERT … ON CONFLICT(id) DO UPDATE SET …"],
+  ["CREATE DATABASE", "Crear una base de datos", "CREATE DATABASE tienda;"],
+  ["CREATE TABLE", "Crear una tabla", "CREATE TABLE t (id INT PRIMARY KEY, …);"],
+  ["ALTER TABLE", "Cambiar estructura de una tabla", "ALTER TABLE t ADD COLUMN c TEXT;"],
+  ["DROP TABLE", "Eliminar una tabla entera", "DROP TABLE IF EXISTS t;"],
+  ["TRUNCATE", "Vaciar una tabla (rápido)", "TRUNCATE TABLE t;"],
+  ["CREATE INDEX", "Acelerar búsquedas en una columna", "CREATE INDEX idx_c ON t(c);"],
+  ["CREATE VIEW", "Guardar una consulta con nombre", "CREATE VIEW v AS SELECT …;"],
+  ["EXPLAIN", "Ver el plan de ejecución", "EXPLAIN SELECT …;"],
+  ["BEGIN / COMMIT", "Iniciar y confirmar una transacción", "BEGIN; … COMMIT;"],
+  ["ROLLBACK", "Deshacer la transacción", "BEGIN; DELETE …; ROLLBACK;"],
+  ["SAVEPOINT", "Punto de retorno dentro de una transacción", "SAVEPOINT s1; … ROLLBACK TO s1;"],
+  ["GRANT", "Dar permisos", "GRANT SELECT ON t TO usuario;"],
+  ["REVOKE", "Quitar permisos", "REVOKE SELECT ON t FROM usuario;"],
+  ["COALESCE", "Valor por defecto para NULL", "COALESCE(email, 'sin email')"],
+  ["PRIMARY KEY / FOREIGN KEY", "Claves que identifican y relacionan", "FOREIGN KEY (c_id) REFERENCES clientes(id)"]
+];
+function renderCheat(q) {
+  q = (q || "").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "");
+  const rows = CHEAT.filter((r) => !q || r.join(" ").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").includes(q));
+  $("#cheat-body").innerHTML = rows.length ? rows.map((r) => "<tr><td>" + esc(r[0]) + "</td><td>" + esc(r[1]) + "</td><td>" + esc(r[2]) + "</td></tr>").join("")
+    : '<tr><td colspan="3">No hay comandos que coincidan con «' + esc(q) + "».</td></tr>";
+}
+$("#cheat-q").addEventListener("input", (e) => renderCheat(e.target.value));
+renderCheat("");
+
+/* ---------- Examen final ---------- */
+function newExam() {
+  const pool = Object.values(QUIZ).flat().concat(EXTRA);
+  for (let i = pool.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [pool[i], pool[j]] = [pool[j], pool[i]]; }
+  const qs = pool.slice(0, 10);
+  renderQuiz($("#exam"), "exam", qs, {
+    title: "10 preguntas", noStore: true,
+    footer: '<div class="exam-actions"><span class="exam-result" id="exam-result">Responde todas para ver tu nota.</span><button type="button" class="btn primary" id="exam-new" style="margin-left:auto">Nuevo examen</button></div>',
+    onAnswer: (n, ok) => {
+      const r = $("#exam-result");
+      if (!r) return;
+      if (n < 10) { r.textContent = n ? "Llevas " + n + " de 10." : "Responde todas para ver tu nota."; return; }
+      const verdict = ok === 10 ? "¡Perfecto! Dominas lo básico." : ok >= 8 ? "Muy bien. Repasa los fallos." : ok >= 5 ? "Aprobado. Vuelve a los capítulos donde fallaste." : "Toca repasar. Relee los capítulos y repite.";
+      r.textContent = "Nota: " + ok + " / 10. " + verdict;
+      if (ok > (progress.bestExam || 0)) { progress.bestExam = ok; saveProgress(); }
+    }
+  });
+  $("#exam-new").addEventListener("click", newExam);
+}
+
+/* ---------- Índice y progreso ---------- */
+const chapters = $$("section.chap");
+$("#toc-list").innerHTML = chapters.map((s, i) => {
+  const n = s.id.startsWith("cap") ? s.id.slice(3) : "·";
+  return '<li><a href="#' + s.id + '" data-sec="' + s.id + '"><span class="n">' + n + "</span><span>" + esc(s.dataset.title) + '</span><span class="done-mark"></span></a></li>';
+}).join("");
+
+function chapterItems(sec) {
+  const items = [];
+  $$(".quiz[data-quiz]", sec).forEach((q) => QUIZ[q.dataset.quiz].forEach((_, i) => items.push(progress.quiz[q.dataset.quiz + ":" + i] !== undefined)));
+  $$(".exercise", sec).forEach((e) => items.push(!!progress.ex[e.dataset.ex]));
+  return items;
+}
+function updateProgress() {
+  let total = 0, done = 0;
+  chapters.forEach((sec) => {
+    const items = chapterItems(sec);
+    total += items.length; const d = items.filter(Boolean).length; done += d;
+    const mark = $('#toc-list a[data-sec="' + sec.id + '"] .done-mark');
+    if (mark) mark.textContent = items.length && d === items.length ? "✓" : items.length && d ? d + "/" + items.length : "";
+  });
+  $("#prog-text").textContent = done + " de " + total + " retos" + (progress.bestExam ? " · examen: " + progress.bestExam + "/10" : "");
+  $("#prog-bar").style.width = (total ? (done / total) * 100 : 0) + "%";
+}
+
+const resetBtn = $("#reset-progress");
+let resetArmed = false;
+resetBtn.addEventListener("click", () => {
+  if (!resetArmed) { resetArmed = true; resetBtn.textContent = "¿Seguro? Pulsa otra vez"; setTimeout(() => { resetArmed = false; resetBtn.textContent = "Borrar mi progreso"; }, 4000); return; }
+  progress = { quiz: {}, ex: {} }; saveProgress();
+  $$(".quiz[data-quiz]").forEach((q) => renderQuiz(q, q.dataset.quiz, QUIZ[q.dataset.quiz]));
+  $$(".exercise").forEach(renderExercise);
+  resetArmed = false; resetBtn.textContent = "Progreso borrado";
+});
+
+if ("IntersectionObserver" in window) {
+  const links = $$("#toc-list a");
+  const io = new IntersectionObserver((entries) => {
+    entries.forEach((en) => { if (en.isIntersecting) links.forEach((a) => a.classList.toggle("active", a.dataset.sec === en.target.id)); });
+  }, { rootMargin: "-20% 0px -70% 0px" });
+  chapters.forEach((s) => io.observe(s));
+}
+
+$$(".quiz[data-quiz]").forEach((q) => renderQuiz(q, q.dataset.quiz, QUIZ[q.dataset.quiz]));
+$$(".exercise").forEach(renderExercise);
+newExam();
+updateProgress();
+
+/* ---------- Arranque del motor ---------- */
+const status = $("#lab-status"), dot = $("#lab-dot");
+if (typeof initSqlJs !== "function") {
+  status.textContent = "No se pudo cargar el motor SQL (revisa tu conexión y recarga la página). Las preguntas siguen funcionando.";
+} else {
+  initSqlJs().then((s) => {
+    SQL = s; labDb = freshDb(); renderSchema();
+    status.textContent = "Motor SQLite listo. Base «tienda» con 3 tablas. Haz clic en cada tabla para ver sus columnas.";
+    dot.classList.add("ready");
+  }).catch((e) => { status.textContent = "Error al iniciar el motor SQL: " + e.message; });
+}
+})();
+</script>
+
+</body>
+</html>
