@@ -1,6 +1,6 @@
-# Bases de datos desde cero
+# Conóceme · Crisomber
 
-Sitio de páginas educativas para aprender programación.
+Sitio de páginas educativas para aprender programación: https://crisomber.github.io/conoceme/
 
 - `css/global.css` y `js/global.js` — lo compartido por todas las páginas: el header del sitio y la opción `data-ocultar-al-bajar` (el header se oculta al bajar y reaparece al subir). Cada página nueva debe cargar ambos archivos.
 - `index.html` — página de inicio (sobre mí y catálogo de cursos). Estilos en `css/inicio.css`, tarjetas en `js/inicio.js`.
