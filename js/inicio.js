@@ -113,3 +113,24 @@ function crearTarjeta(curso) {
 
 document.getElementById("lista-cursos").replaceChildren(...CURSOS.map(crearTarjeta));
 document.getElementById("anio").textContent = new Date().getFullYear();
+
+// Header: se oculta al bajar y reaparece con un poco de scroll hacia arriba
+(function () {
+  const header = document.querySelector(".site-header");
+  if (!header) return;
+  const UMBRAL = 6; // píxeles mínimos de movimiento para reaccionar
+  let ultimoY = window.scrollY;
+
+  function actualizar() {
+    const y = window.scrollY;
+    const dif = y - ultimoY;
+    if (Math.abs(dif) < UMBRAL) return;
+    const bajando = dif > 0 && y > header.offsetHeight;
+    // No ocultarlo mientras el teclado está dentro del header
+    header.classList.toggle("is-hidden", bajando && !header.contains(document.activeElement));
+    ultimoY = y;
+  }
+
+  window.addEventListener("scroll", actualizar, { passive: true });
+  header.addEventListener("focusin", () => header.classList.remove("is-hidden"));
+})();

@@ -261,7 +261,10 @@ textarea { width: 100%; min-height: 96px; resize: vertical; font-family: var(--f
 .exam-result { font-weight: 600; }
 
 /* Header del sitio (mismo que la portada) */
-.site-header { position: sticky; top: 0; z-index: 25; background: color-mix(in srgb, var(--bg) 86%, transparent); backdrop-filter: blur(10px); border-bottom: 1px solid var(--line); padding-top: env(safe-area-inset-top, 0px); }
+.site-header { position: sticky; top: 0; z-index: 25; background: color-mix(in srgb, var(--bg) 86%, transparent); backdrop-filter: blur(10px); border-bottom: 1px solid var(--line); padding-top: env(safe-area-inset-top, 0px); transition: transform .25s ease; }
+.site-header.is-hidden { transform: translateY(-100%); }
+.toc { transition: top .25s ease; }
+.site-header.is-hidden ~ .layout .toc { top: calc(16px + env(safe-area-inset-top, 0px)); max-height: calc(100vh - 32px); }
 .header-inner { display: flex; align-items: center; justify-content: space-between; gap: 1rem; min-height: 4rem; }
 .brand { display: inline-flex; align-items: center; gap: .6rem; text-decoration: none; color: var(--ink); font-family: var(--f-display); font-weight: 800; font-size: 1.2rem; }
 .brand-mark { display: grid; place-items: center; width: 2.1rem; height: 2.1rem; background: var(--ink); color: var(--bg); border-radius: 8px; font: 600 .85rem var(--f-mono); }
@@ -1604,6 +1607,23 @@ resetBtn.addEventListener("click", () => {
   $$(".exercise").forEach(renderExercise);
   resetArmed = false; resetBtn.textContent = "Progreso borrado";
 });
+
+/* ---------- Header: se oculta al bajar, vuelve al subir ---------- */
+(function () {
+  const header = $(".site-header");
+  if (!header) return;
+  const UMBRAL = 6;
+  let lastY = window.scrollY;
+  function update() {
+    const y = window.scrollY, dif = y - lastY;
+    if (Math.abs(dif) < UMBRAL) return;
+    const down = dif > 0 && y > header.offsetHeight;
+    header.classList.toggle("is-hidden", down && !header.contains(document.activeElement));
+    lastY = y;
+  }
+  window.addEventListener("scroll", update, { passive: true });
+  header.addEventListener("focusin", () => header.classList.remove("is-hidden"));
+})();
 
 /* ---------- Una sección a la vez ---------- */
 const LAST_KEY = STORE_KEY + ":seccion";

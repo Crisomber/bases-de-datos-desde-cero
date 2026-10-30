@@ -85,7 +85,10 @@ p { margin: 0 0 1rem; }
   background: color-mix(in srgb, var(--bg) 86%, transparent);
   backdrop-filter: blur(10px);
   border-bottom: 1px solid var(--line);
+  transition: transform .25s ease;
 }
+/* Se oculta al bajar y vuelve al subir (ver js/inicio.js) */
+.site-header.is-hidden { transform: translateY(-100%); }
 .header-inner { display: flex; align-items: center; justify-content: space-between; gap: 1rem; min-height: 4rem; }
 
 .brand { display: inline-flex; align-items: center; gap: .6rem; text-decoration: none; font-family: var(--f-display); font-weight: 800; font-size: 1.2rem; }
