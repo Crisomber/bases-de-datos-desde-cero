@@ -1,0 +1,57 @@
+/* =========================================================
+   Estilos globales — compartidos por todas las páginas
+   Cárgalo ANTES del CSS propio de cada página:
+     <link rel="stylesheet" href="css/global.css">
+
+   Usa los colores y fuentes que define cada página en :root
+   (--bg, --ink, --muted, --line, --accent, --f-display, --f-mono),
+   así el header toma la paleta de la página donde está.
+   ========================================================= */
+
+/* ---------- Enlace "Saltar al contenido" ---------- */
+.skip-link {
+  position: absolute; left: 1rem; top: -4rem; z-index: 100;
+  background: var(--ink); color: var(--bg); padding: .6rem 1rem; border-radius: 8px;
+  text-decoration: none; font-weight: 600;
+}
+.skip-link:focus { top: 1rem; }
+
+/* ---------- Header ---------- */
+.site-header {
+  position: sticky; top: 0; z-index: 25;
+  background: color-mix(in srgb, var(--bg) 86%, transparent);
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid var(--line);
+  padding-top: env(safe-area-inset-top, 0px);
+}
+.header-inner { display: flex; align-items: center; justify-content: space-between; gap: 1rem; min-height: 4rem; }
+
+.brand { display: inline-flex; align-items: center; gap: .6rem; text-decoration: none; color: var(--ink); font-family: var(--f-display); font-weight: 800; font-size: 1.2rem; }
+.brand-mark {
+  display: grid; place-items: center; width: 2.1rem; height: 2.1rem;
+  background: var(--ink); color: var(--bg); border-radius: 8px;
+  font: 600 .85rem var(--f-mono);
+}
+
+.nav-list { display: flex; gap: clamp(.75rem, 3vw, 2rem); list-style: none; margin: 0; padding: 0; }
+.nav-list li { margin: 0; }
+.nav-list a { text-decoration: none; font-weight: 500; color: var(--muted); padding: .25rem 0; border-bottom: 2px solid transparent; }
+.nav-list a:hover, .nav-list a[aria-current] { color: var(--ink); border-bottom-color: var(--accent); }
+
+@media (max-width: 520px) {
+  .nav-list { gap: .9rem; font-size: .92rem; }
+  .brand-name { display: none; }
+}
+
+/* ---------- Opción: ocultar el header al bajar ----------
+   Añade el atributo al header y js/global.js hace el resto:
+     <header class="site-header" data-ocultar-al-bajar>
+   Opcional: indica cuántos píxeles de scroll hacen falta para reaccionar
+     <header class="site-header" data-ocultar-al-bajar="20">
+   --------------------------------------------------------- */
+[data-ocultar-al-bajar] { transition: transform .25s ease; }
+[data-ocultar-al-bajar].is-hidden { transform: translateY(-100%); }
+
+@media (prefers-reduced-motion: reduce) {
+  [data-ocultar-al-bajar] { transition: none; }
+}

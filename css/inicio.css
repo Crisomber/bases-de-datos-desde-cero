@@ -72,35 +72,7 @@ p { margin: 0 0 1rem; }
 
 :focus-visible { outline: 3px solid var(--blue); outline-offset: 3px; border-radius: 6px; }
 
-.skip-link {
-  position: absolute; left: 1rem; top: -4rem; z-index: 100;
-  background: var(--ink); color: var(--bg); padding: .6rem 1rem; border-radius: 8px;
-  text-decoration: none; font-weight: 600;
-}
-.skip-link:focus { top: 1rem; }
-
-/* ---------- Header ---------- */
-.site-header {
-  position: sticky; top: 0; z-index: 50;
-  background: color-mix(in srgb, var(--bg) 86%, transparent);
-  backdrop-filter: blur(10px);
-  border-bottom: 1px solid var(--line);
-  transition: transform .25s ease;
-}
-/* Se oculta al bajar y vuelve al subir (ver js/inicio.js) */
-.site-header.is-hidden { transform: translateY(-100%); }
-.header-inner { display: flex; align-items: center; justify-content: space-between; gap: 1rem; min-height: 4rem; }
-
-.brand { display: inline-flex; align-items: center; gap: .6rem; text-decoration: none; font-family: var(--f-display); font-weight: 800; font-size: 1.2rem; }
-.brand-mark {
-  display: grid; place-items: center; width: 2.1rem; height: 2.1rem;
-  background: var(--ink); color: var(--bg); border-radius: 8px;
-  font: 600 .85rem var(--f-mono);
-}
-
-.nav-list { display: flex; gap: clamp(.75rem, 3vw, 2rem); list-style: none; margin: 0; padding: 0; }
-.nav-list a { text-decoration: none; font-weight: 500; color: var(--muted); padding: .25rem 0; border-bottom: 2px solid transparent; }
-.nav-list a:hover { color: var(--ink); border-bottom-color: var(--accent); }
+/* El header y "Saltar al contenido" están en css/global.css */
 
 /* ---------- Botones ---------- */
 .btn {
@@ -257,7 +229,5 @@ p { margin: 0 0 1rem; }
   .about-grid .photo-frame { max-width: 280px; }
 }
 @media (max-width: 520px) {
-  .nav-list { gap: .9rem; font-size: .92rem; }
-  .brand-name { display: none; }
   .btn { flex: 1 1 auto; justify-content: center; }
 }

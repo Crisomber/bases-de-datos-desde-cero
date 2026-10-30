@@ -11,6 +11,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;1,400&family=JetBrains+Mono:wght@400;600&display=swap">
+<link rel="stylesheet" href="css/global.css">
 <style>
 /* Layout: índice fijo a la izquierda + capítulos en columna de lectura; laboratorio SQL como cajón lateral */
 :root {
@@ -260,24 +261,9 @@ textarea { width: 100%; min-height: 96px; resize: vertical; font-family: var(--f
 .exam-actions { display: flex; gap: 10px; padding: 14px 18px; border-top: 1px solid var(--line); flex-wrap: wrap; align-items: center; }
 .exam-result { font-weight: 600; }
 
-/* Header del sitio (mismo que la portada) */
-.site-header { position: sticky; top: 0; z-index: 25; background: color-mix(in srgb, var(--bg) 86%, transparent); backdrop-filter: blur(10px); border-bottom: 1px solid var(--line); padding-top: env(safe-area-inset-top, 0px); transition: transform .25s ease; }
-.site-header.is-hidden { transform: translateY(-100%); }
+/* El header del sitio está en css/global.css. Aquí solo: el índice sube cuando el header se oculta */
 .toc { transition: top .25s ease; }
 .site-header.is-hidden ~ .layout .toc { top: calc(16px + env(safe-area-inset-top, 0px)); max-height: calc(100vh - 32px); }
-.header-inner { display: flex; align-items: center; justify-content: space-between; gap: 1rem; min-height: 4rem; }
-.brand { display: inline-flex; align-items: center; gap: .6rem; text-decoration: none; color: var(--ink); font-family: var(--f-display); font-weight: 800; font-size: 1.2rem; }
-.brand-mark { display: grid; place-items: center; width: 2.1rem; height: 2.1rem; background: var(--ink); color: var(--bg); border-radius: 8px; font: 600 .85rem var(--f-mono); }
-.nav-list { display: flex; gap: clamp(.75rem, 3vw, 2rem); list-style: none; margin: 0; padding: 0; }
-.nav-list li + li { margin-top: 0; }
-.nav-list a { text-decoration: none; font-weight: 500; color: var(--muted); padding: .25rem 0; border-bottom: 2px solid transparent; }
-.nav-list a:hover, .nav-list a[aria-current] { color: var(--ink); border-bottom-color: var(--accent); }
-.skip-link { position: absolute; left: 1rem; top: -4rem; z-index: 100; background: var(--ink); color: var(--bg); padding: .6rem 1rem; border-radius: 8px; text-decoration: none; font-weight: 600; }
-.skip-link:focus { top: 1rem; }
-@media (max-width: 520px) {
-  .nav-list { gap: .9rem; font-size: .92rem; }
-  .brand-name { display: none; }
-}
 
 /* Navegación entre secciones */
 .toc ol { position: relative; }
@@ -316,7 +302,7 @@ footer .wrap { padding-block: 24px 90px; }
 
 <a class="skip-link" href="#contenido">Saltar al contenido</a>
 
-<header class="site-header">
+<header class="site-header" data-ocultar-al-bajar>
   <div class="wrap header-inner">
     <a class="brand" href="index.html" aria-label="Inicio">
       <span class="brand-mark" aria-hidden="true">&gt;_</span>
@@ -1044,6 +1030,7 @@ SELECT * FROM clientes WHERE id IN (1, 8);</pre></div>
   </div>
 </aside>
 
+<script src="js/global.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/sql.js@1.8.0/dist/sql-asm.js"></script>
 <script>
 (function () {
@@ -1608,22 +1595,6 @@ resetBtn.addEventListener("click", () => {
   resetArmed = false; resetBtn.textContent = "Progreso borrado";
 });
 
-/* ---------- Header: se oculta al bajar, vuelve al subir ---------- */
-(function () {
-  const header = $(".site-header");
-  if (!header) return;
-  const UMBRAL = 6;
-  let lastY = window.scrollY;
-  function update() {
-    const y = window.scrollY, dif = y - lastY;
-    if (Math.abs(dif) < UMBRAL) return;
-    const down = dif > 0 && y > header.offsetHeight;
-    header.classList.toggle("is-hidden", down && !header.contains(document.activeElement));
-    lastY = y;
-  }
-  window.addEventListener("scroll", update, { passive: true });
-  header.addEventListener("focusin", () => header.classList.remove("is-hidden"));
-})();
 
 /* ---------- Una sección a la vez ---------- */
 const LAST_KEY = STORE_KEY + ":seccion";
