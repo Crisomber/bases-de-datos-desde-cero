@@ -260,6 +260,26 @@ textarea { width: 100%; min-height: 96px; resize: vertical; font-family: var(--f
 .exam-actions { display: flex; gap: 10px; padding: 14px 18px; border-top: 1px solid var(--line); flex-wrap: wrap; align-items: center; }
 .exam-result { font-weight: 600; }
 
+/* Navegación entre secciones */
+.toc ol { position: relative; }
+.home-link { display: block; padding: 0 10px 14px; font-size: .85rem; color: var(--muted); text-decoration: none; }
+.home-link:hover { color: var(--accent); }
+.chap-nav { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); gap: 12px; align-items: stretch; border-top: 1px solid var(--line); padding-top: 22px; margin-top: 16px; }
+.chap-nav a { display: flex; flex-direction: column; gap: 2px; padding: 12px 16px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface); color: var(--ink); text-decoration: none; min-width: 0; }
+.chap-nav a:hover { border-color: var(--accent); }
+.chap-prev { grid-column: 1; }
+.chap-next { grid-column: 3; text-align: right; background: var(--accent) !important; border-color: var(--accent) !important; color: var(--accent-ink) !important; }
+.chap-next:hover { filter: brightness(1.08); }
+.cn-k { font-family: var(--f-mono); font-size: .72rem; letter-spacing: .08em; text-transform: uppercase; opacity: .8; }
+.cn-t { font-family: var(--f-display); font-weight: 700; font-size: 1.05rem; line-height: 1.25; }
+.chap-pos { grid-column: 2; align-self: center; text-align: center; font-family: var(--f-mono); font-size: .78rem; color: var(--muted); font-variant-numeric: tabular-nums; display: flex; flex-direction: column; }
+@media (max-width: 600px) {
+  .chap-nav { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+  .chap-pos { grid-column: 1 / -1; grid-row: 1; }
+  .chap-prev { grid-column: 1; grid-row: 2; }
+  .chap-next { grid-column: 2; grid-row: 2; }
+}
+
 footer { border-top: 1px solid var(--line); color: var(--muted); font-size: .85rem; }
 footer .wrap { padding-block: 24px 90px; }
 
@@ -302,6 +322,7 @@ footer .wrap { padding-block: 24px 90px; }
 
 <div class="wrap layout">
   <nav class="toc" aria-label="Capítulos">
+    <a class="home-link" href="index.html">← Volver a la portada</a>
     <div class="toc-title">Capítulos</div>
     <ol id="toc-list"></ol>
     <button class="btn ghost reset" id="reset-progress" type="button">Borrar mi progreso</button>
@@ -1535,6 +1556,8 @@ function updateProgress() {
     total += items.length; const d = items.filter(Boolean).length; done += d;
     const mark = $('#toc-list a[data-sec="' + sec.id + '"] .done-mark');
     if (mark) mark.textContent = items.length && d === items.length ? "✓" : items.length && d ? d + "/" + items.length : "";
+    const ci = $(".chap-items", sec);
+    if (ci) ci.textContent = items.length ? "retos: " + d + " de " + items.length : "";
   });
   $("#prog-text").textContent = done + " de " + total + " retos" + (progress.bestExam ? " · examen: " + progress.bestExam + "/10" : "");
   $("#prog-bar").style.width = (total ? (done / total) * 100 : 0) + "%";
@@ -1550,13 +1573,39 @@ resetBtn.addEventListener("click", () => {
   resetArmed = false; resetBtn.textContent = "Progreso borrado";
 });
 
-if ("IntersectionObserver" in window) {
-  const links = $$("#toc-list a");
-  const io = new IntersectionObserver((entries) => {
-    entries.forEach((en) => { if (en.isIntersecting) links.forEach((a) => a.classList.toggle("active", a.dataset.sec === en.target.id)); });
-  }, { rootMargin: "-20% 0px -70% 0px" });
-  chapters.forEach((s) => io.observe(s));
+/* ---------- Una sección a la vez ---------- */
+const LAST_KEY = STORE_KEY + ":seccion";
+chapters.forEach((sec, i) => {
+  const link = (s, cls, k) => s ? '<a class="' + cls + '" href="#' + s.id + '"><span class="cn-k">' + k + '</span><span class="cn-t">' + esc(s.dataset.title) + "</span></a>" : "";
+  const nav = document.createElement("nav");
+  nav.className = "chap-nav";
+  nav.setAttribute("aria-label", "Cambiar de sección");
+  nav.innerHTML = link(chapters[i - 1], "chap-prev", "← Anterior") +
+    '<span class="chap-pos"><span>Sección ' + (i + 1) + " de " + chapters.length + '</span><span class="chap-items"></span></span>' +
+    link(chapters[i + 1], "chap-next", "Siguiente →");
+  sec.appendChild(nav);
+});
+
+function showChapter(id, scroll) {
+  const sec = chapters.find((s) => s.id === id) || chapters[0];
+  chapters.forEach((s) => { s.hidden = s !== sec; });
+  $$("#toc-list a").forEach((a) => {
+    const on = a.dataset.sec === sec.id;
+    a.classList.toggle("active", on);
+    if (on) {
+      a.setAttribute("aria-current", "step");
+      const ol = a.closest("ol");
+      ol.scrollLeft = a.parentElement.offsetLeft - (ol.clientWidth - a.offsetWidth) / 2;
+    } else a.removeAttribute("aria-current");
+  });
+  try { localStorage.setItem(LAST_KEY, sec.id); } catch (e) {}
+  if (scroll) $(".layout").scrollIntoView({ block: "start" });
 }
+window.addEventListener("hashchange", () => showChapter(location.hash.slice(1), true));
+const hashId = location.hash.slice(1), fromHash = chapters.some((s) => s.id === hashId);
+let lastId = "";
+try { lastId = localStorage.getItem(LAST_KEY) || ""; } catch (e) {}
+showChapter(fromHash ? hashId : lastId, fromHash);
 
 $$(".quiz[data-quiz]").forEach((q) => renderQuiz(q, q.dataset.quiz, QUIZ[q.dataset.quiz]));
 $$(".exercise").forEach(renderExercise);
